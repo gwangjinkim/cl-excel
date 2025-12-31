@@ -280,7 +280,80 @@ When implementing a feature, follow this order:
 - Implement code.
 - Ensure all tests pass.
 
+- When running or reporting tests, use the **Roswell canonical test command** from “Tooling: Roswell”.
+- Include the exact Roswell command(s) executed in PROGRESS.md under “Commands run / verification”.
+
 ---
+
+## Progress logging (mandatory): PROGRESS.md
+
+After **every** Codex task/milestone (even small ones), update `PROGRESS.md`.
+
+Rules:
+1) If `PROGRESS.md` does not exist, create it with the header template below.
+2) Append a **new entry at the top** (reverse-chronological).
+3) Keep entries concise and factual. No marketing text.
+4) Include: what changed, where (files), how verified (tests/commands), and next steps.
+5) If tests were not run, explicitly say why and what to run.
+
+Required entry template (copy exactly):
+
+### YYYY-MM-DD — Task: <short title> (Milestone: Mx or “misc”)
+**Goal:** <one sentence>
+**Summary:** <3–8 bullet points of what was implemented/fixed>
+**Files changed:**
+- `<path>`
+- `<path>`
+**Commands run / verification:**
+- `<command>`
+- `<command>`
+**Result:** PASS | FAIL (with 1–2 lines if FAIL)
+**Notes / open questions:** <optional, bullet list>
+**Next:** <one concrete next step>
+
+Also update `README.md` only when the task introduces or changes public API.
+
+---
+
+## Tooling: Roswell (mandatory)
+
+All development and tests MUST be run via **Roswell**. Do not invoke `sbcl`/`ccl` directly.
+
+### Required commands
+
+#### Start a REPL
+```bash
+ros run
+```
+
+#### Load / quick sanity check
+```bash
+ros -Q run --eval '(require :asdf)' \
+            --eval '(asdf:load-system :cl-excel)' \
+            --eval '(quit)'
+```
+
+#### Run tests (the canonical command)
+```bash
+ros -Q run --eval '(require :asdf)' \
+            --eval '(asdf:test-system :cl-excel)' \
+            --eval '(quit)'
+```
+
+#### Notes
+
+- Use -Q to avoid user init files that might affect reproducibility.
+- If multiple Lisp implementations are needed, document them an drun via: `ros -L <impl> -Q run ...`
+- If tests require extra enviornment variables (e.g., fixture paths), document them in PROGRESS.md.
+
+- `ros -Q run --eval '(require :asdf)' --eval '(asdf:test-system :cl-excel)' --eval '(quit)'` passes.
+- PROGRESS.md is updated with the command output summary.
+
+
+---
+
+
+
 
 ## Milestones (execution plan)
 
