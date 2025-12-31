@@ -346,6 +346,15 @@ ros -Q run --eval '(require :asdf)' \
 - If multiple Lisp implementations are needed, document them an drun via: `ros -L <impl> -Q run ...`
 - If tests require extra enviornment variables (e.g., fixture paths), document them in PROGRESS.md.
 
+
+
+
+#### Definition of done:
+
+- All FiveAM tests pass via (asdf:test-system :cl-excel)
+- Public functions added have docstrings
+- No breaking changes to previous milestones
+- Update README with one example for the newly added API surface
 - `ros -Q run --eval '(require :asdf)' --eval '(asdf:test-system :cl-excel)' --eval '(quit)'` passes.
 - PROGRESS.md is updated with the command output summary.
 
