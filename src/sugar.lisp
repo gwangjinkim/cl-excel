@@ -57,14 +57,22 @@
    Returns list of lists (rows).
    PATH: Path to .xlsx file.
    SHEET-ID: Sheet name or index (default 1).
-   RANGE: Cell range to read (default :all - effectively all used rows for now)."
+   RANGE: Cell range to read/scan (default :all)."
   (with-xlsx (wb path)
     (let ((sh (sheet wb sheet-id)))
       (if (eq range :all)
-          ;; Read all rows logic
-          ;; For M10, currently we don't have a 'read-all-data' distinct from manual iteration for the whole sheet,
-          ;; but we can iterate.
-          ;; Actually, `read-table` does iteration. Let's do a simple row collector.
           (map-rows #'identity sh)
-          ;; If specific range "A1:B2"
-          (get-data sh range))))) 
+          ;; If explicit range "A1:B2"
+          (let ((range-struct (if (stringp range) (parse-cell-ref range :range t) range)))
+            ;; Simple iteration over the range
+            (let ((r1 (range-start-row range-struct))
+                  (c1 (range-start-col range-struct))
+                  (r2 (range-end-row range-struct))
+                  (c2 (range-end-col range-struct))
+                  (res '()))
+              (loop for r from r1 to r2 do
+                (let ((row '()))
+                  (loop for c from c1 to c2 do
+                    (push (get-data sh (cons r c)) row))
+                  (push (nreverse row) res)))
+              (nreverse res))))))) 
