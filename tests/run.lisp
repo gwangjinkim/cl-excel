@@ -21,18 +21,24 @@
                (find-symbol name :cl-excel)
              (declare (ignore sym))
              (eq status :external))))
-    (dolist (nm '("READXLSX" "OPENXLSX" "CLOSEXLSX" "WITH-XLSX" "WRITEXLSX"
-                  "SHEETNAMES" "SHEETCOUNT" "HASSHEET" "SHEET" "ADDSHEET!"
-                  "RENAME!" "GETDATA" "READDATA" "GETCELL" "GETCELLRANGE"
-                  "CELL" "RANGE" "SHEETREF" "NAMED" "EACHROW" "ROW-NUMBER"
-                  "EACHTABLEROW" "READTABLE" "GETTABLE" "DATATABLE-DATA"
-                  "DATATABLE-COLUMN-LABELS" "DATATABLE-COLUMN-INDEX"
-                  "WRITETABLE" "WRITETABLE!"))
+    (dolist (nm '("READ-XLSX" "OPEN-XLSX" "CLOSE-XLSX" "WITH-XLSX" "WRITE-XLSX"
+                  "SHEET-NAMES" "SHEET-COUNT" "HAS-SHEET-P" "SHEET" "ADD-SHEET!"
+                  "RENAME-SHEET!" "GET-DATA" "READ-DATA" "GET-CELL" "GET-CELL-RANGE"
+                  "CELL" "RANGE" "SHEET-REF" "NAMED" "EACH-ROW" "ROW-NUMBER"
+                  "DO-ROWS" "EACH-TABLE-ROW" "DO-TABLE-ROWS"
+                  "READ-TABLE" "GET-TABLE"
+                  "TABLE" "TABLE-NAME" "TABLE-REF" "TABLE-COLUMNS" "TABLE-DISPLAY-NAME"
+                  "TABLE-COLUMN" "TABLE-COLUMN-NAME" "TABLE-COLUMN-ID"
+                  "XLSX-ERROR" "XLSX-PARSE-ERROR" "SHEET-MISSING-ERROR"
+                  "INVALID-RANGE-ERROR" "READ-ONLY-ERROR"))
       (is (exported-p nm) "~A should be exported" nm))))
 
 (defun run-tests ()
   "Entry point for ASDF test-op. Returns T when the suite is invoked."
-  (let ((results (run! :cl-excel/test-suite)))
+  (let ((results (and (run! :cl-excel/test-suite)
+                      (run! :cl-excel/refs)
+                      (run! :cl-excel/workbook)
+                      (run! :cl-excel/tables))))
     (declare (ignore results))
     t))
 

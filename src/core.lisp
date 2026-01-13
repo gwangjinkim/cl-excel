@@ -1,12 +1,101 @@
-;;;; src/core.lisp — minimal implementation stub for M0
+;;;; src/core.lisp
 
 (in-package #:cl-excel)
 
-;; Milestone M0 only provides a buildable skeleton.  The public API is
-;; exported from src/package.lisp, but functionality will be added in
-;; later milestones.  Keeping a version helper can aid debugging.
+(defparameter *implementation-version* "0.1.0")
 
-(defparameter *implementation-version*
-  "0.0.1"
-  "cl-excel skeleton version for milestone M0.")
+;;; Workbook Access
 
+(defun sheet (workbook which)
+  "Get a sheet object by name (string) or index (integer, 1-based)."
+  (typecase which
+    (integer 
+     (if (and (>= which 1) (<= which (length (workbook-sheets workbook))))
+         (nth (1- which) (workbook-sheets workbook))
+         (error 'sheet-missing-error :name which)))
+    (string 
+     (or (find which (workbook-sheets workbook) 
+               :key #'sheet-name 
+               :test #'string=)
+         (error 'sheet-missing-error :name which)))
+    (t (error 'xlsx-error :message "Sheet selector must be string or integer."))))
+
+;;; Cell Access
+
+
+(defun get-cell (sheet ref)
+  "Get the raw CELL struct at REF (string 'A1', CELL-REF struct, or (row . col) cons).
+   Returns a CELL with value +missing+ if empty."
+  (let* ((coords (typecase ref
+                   (cons ref)
+                   (string (let ((r (parse-cell-ref ref)))
+                             (cons (cell-ref-row r) (cell-ref-col r))))
+                   (cell-ref (cons (cell-ref-row ref) (cell-ref-col ref)))
+                   (t (error "Invalid ref type: ~A" (type-of ref)))))
+         (raw-cell (gethash coords (sheet-cells sheet))))
+    (or raw-cell (make-cell +missing+))))
+
+(defun (setf get-cell) (new-value sheet ref)
+  "Set the cell at REF to NEW-VALUE (a CELL struct)."
+  (let* ((coords (typecase ref
+                   (cons ref)
+                   (string (let ((r (parse-cell-ref ref)))
+                             (cons (cell-ref-row r) (cell-ref-col r))))
+                   (cell-ref (cons (cell-ref-row ref) (cell-ref-col ref)))
+                   (t (error "Invalid ref type: ~A" (type-of ref))))))
+    (setf (gethash coords (sheet-cells sheet)) new-value)))
+
+(defun get-data (sheet ref)
+  "Get the value of cell(s) at REF.
+   REF can be 'A1', 'A1:B2'.
+   Returns scalar value or 2D array."
+  ;; For M3, we focus on scalar A1 access.
+  ;; TODO: cell range support logic.
+  (let ((cell (get-cell sheet ref)))
+    (cell-value cell)))
+
+;;; Table Access (M4)
+
+(defun get-table (workbook name-or-index)
+  "Get a TABLE object by name (string) or index (integer)."
+  (let ((tables (workbook-tables workbook)))
+    (typecase name-or-index
+      (integer 
+       (if (and (>= name-or-index 1) (<= name-or-index (length tables)))
+           (nth (1- name-or-index) tables)
+           nil))
+      (string 
+       (find name-or-index tables :key #'table-name :test #'string-equal))
+      (t nil))))
+
+(defun read-table (workbook name)
+  "Read data from the named table. Returns a list of lists (rows)."
+  (let ((tbl (get-table workbook name)))
+    (unless tbl 
+      (error 'xlsx-error :message (format nil "Table ~A not found" name)))
+    
+    (let* ((sheet (cl-excel::table-sheet tbl))
+           (ref (cl-excel::table-ref tbl)))
+      (unless sheet
+        ;; If table has no sheet reference (scanning failed to link or M4 legacy),
+        ;; we can't read data.
+        ;; But with M5 rels parsing, it SHOULD be there.
+        (error 'xlsx-error :message (format nil "Table ~A is not linked to a sheet (Rels missing?)." name)))
+      
+      ;; Parse range "A2:C5"
+      (let* ((range (parse-cell-ref ref :range t)) ;; Returns a range struct
+             (start-row (cl-excel::range-start-row range))
+             (end-row (cl-excel::range-end-row range))
+             (start-col (cl-excel::range-start-col range))
+             (end-col (cl-excel::range-end-col range))
+             (data '()))
+        
+        ;; Iterate rows
+        (loop for r from start-row to end-row do
+          (let ((row-data '()))
+            (loop for c from start-col to end-col do
+              (let* ((cell-ref (format nil "~A~A" (col-name c) r))
+                     (val (get-data sheet cell-ref)))
+                (push val row-data)))
+            (push (nreverse row-data) data)))
+        (nreverse data)))))

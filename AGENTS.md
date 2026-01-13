@@ -151,12 +151,34 @@ XLSX is a zip of XML parts (OOXML / ECMA-376). Implement as:
 
 ### Library dependencies (choose stable, portable)
 - XML: `cxml` (SAX+DOM) or `plump` (DOM) + a SAX option for big sheets
-- ZIP: `zip` / `archive` (pick one; ensure binary-safe streams)
+- ZIP: `zip` / `archive` (pick one; ensure binary-safe streams). **Recommendation: `zip` via `uiop:run-program` or `chipz` for pure lisp.**
 - Time: `local-time` (preferred)
 - Testing: `fiveam`
 - Optional: `babel` for encoding, `flexi-streams`
 
 Codex should pick one stack and be consistent across the codebase.
+
+### Error Handling (New)
+Define a restartable condition hierarchy:
+- `xlsx-error` (base condition)
+  - `xlsx-parse-error`
+  - `sheet-missing-error`
+  - `invalid-range-error`
+  - `read-only-error` (when trying to write to read-only wb)
+
+Strict mode should signal errors; loose mode might warn. Use `restart-case` to allow user intervention (e.g. `use-value`, `ignore`).
+
+---
+
+### Error Handling (New)
+Define a restartable condition hierarchy:
+- `xlsx-error` (base condition)
+  - `xlsx-parse-error`
+  - `sheet-missing-error`
+  - `invalid-range-error`
+  - `read-only-error` (when trying to write to read-only wb)
+
+Strict mode should signal errors; loose mode might warn. Use `restart-case` to allow user intervention (e.g. `use-value`, `ignore`).
 
 ---
 
@@ -164,46 +186,48 @@ Codex should pick one stack and be consistent across the codebase.
 Export the following symbols from package `CL-EXCEL`:
 
 ### Open/close
-- `readxlsx (source) -> workbook`
-- `openxlsx (source &key mode enable-cache) -> workbook`        ; manual close
-- `closexlsx (workbook) -> nil`
+- `read-xlsx (source) -> workbook`
+- `open-xlsx (source &key mode enable-cache) -> workbook`        ; manual close
+- `close-xlsx (workbook) -> nil`
 - `with-xlsx ((wb source &key mode enable-cache) &body body)`   ; do-syntax equivalent
-- `writexlsx (output workbook &key overwrite) -> output`
+- `write-xlsx (output workbook &key overwrite) -> output`
 
 ### Workbook/sheets
-- `sheetnames (workbook)`
-- `sheetcount (workbook)`
-- `hassheet (workbook name)`
+- `sheet-names (workbook)`
+- `sheet-count (workbook)`
+- `has-sheet-p (workbook name)`
 - `sheet (workbook which)` ; which = string name or integer index
-- `addsheet! (workbook name)`
-- `rename! (sheet new-name)`
+- `add-sheet! (workbook name)`
+- `rename-sheet! (sheet new-name)`
 
 ### Cells/ranges
-- `getdata (sheet ref)`              ; scalar or 2D
-- `readdata (source sheet ref)`      ; convenience
-- `getcell (sheet ref) -> cell`
-- `getcellrange (sheet range) -> 2D cell matrix`
+- `get-data (sheet ref)`              ; scalar or 2D
+- `read-data (source sheet ref)`      ; convenience
+- `get-cell (sheet ref) -> cell`
+- `get-cell-range (sheet range) -> 2D cell matrix`
 
 ### Indexing sugar (optional but recommended)
 - `(cell sheet "B2")` and `(setf (cell sheet "B2") value)`
 - `(range sheet "A1:B3")` and `(setf (range sheet "A1:B3") matrix)`
-- `(sheetref workbook "mysheet!A1:B2")` ; parse sheet-qualified ref
+- `(sheet-ref workbook "mysheet!A1:B2")` ; parse sheet-qualified ref
 - Named ranges: `(named workbook "NAME")`
 
-### Iterators
-- `eachrow (sheet &key left right)` -> iterator of `sheetrow`
+### Iterators & Macros
+- `each-row (sheet &key left right)` -> iterator of `sheetrow`
+- `do-rows ((row sheet &key left right) &body body)`
 - `row-number (sheetrow|tablerow)`
-- `getcell (sheetrow column)` ; overload for sheetrow
-- `eachtablerow (sheet &key columns first-row column-labels header stop-in-empty-row stop-in-row-function keep-empty-rows)`
+- `get-cell (sheetrow column)` ; overload for sheetrow
+- `each-table-row (sheet &key columns first-row column-labels header stop-in-empty-row stop-in-row-function keep-empty-rows)`
+- `do-table-rows ((row sheet &key ...) &body body)`
 
 ### Tables
-- `readtable (source sheet &key ...) -> datatable`
-- `gettable (sheet &key ...) -> datatable`
+- `read-table (source sheet &key ...) -> datatable`
+- `get-table (sheet &key ...) -> datatable`
 - `datatable-data (dt)` => columns or rows (define)
 - `datatable-column-labels (dt)`
 - `datatable-column-index (dt)` => mapping label->index
-- `writetable (output &rest sheetspecs) -> output`
-- `writetable! (sheet table &key anchor-cell)` ; anchor default "A1"
+- `write-table (output &rest sheetspecs) -> output`
+- `write-table! (sheet table &key anchor-cell)` ; anchor default "A1"
 
 Table input formats supported:
 - (columns, labels) style: `(:columns (list-of-vectors) :labels (list-of-strings/symbols))`
@@ -249,9 +273,9 @@ Commit small `.xlsx` fixtures under `tests/fixtures/`:
 
 ### Test categories
 1) **Unit**: ref parsing (A1, A:B, A1:B2, sheet!ref), column letters<->numbers.
-2) **Read**: `readxlsx`, `getdata`, `getcell/getcellrange`, named ranges.
-3) **Iterators**: `eachrow` and `eachtablerow` behavior on caching on/off.
-4) **Tables**: `readtable/gettable` options parity:
+2) **Read**: `read-xlsx`, `get-data`, `get-cell/get-cell-range`, named ranges.
+3) **Iterators**: `each-row` and `each-table-row` behavior on caching on/off.
+4) **Tables**: `read-table/get-table` options parity:
    - infer columns
    - first_row
    - header vs no header
@@ -259,7 +283,7 @@ Commit small `.xlsx` fixtures under `tests/fixtures/`:
    - stop_in_empty_row true/false
    - stop_in_row_function predicate
    - keep_empty_rows
-5) **Write**: create new file, write cells/ranges, `writetable`/`writetable!`.
+5) **Write**: create new file, write cells/ranges, `write-table`/`write-table!`.
 6) **Roundtrip**: write -> read -> equals (with missing semantics).
 7) **Edit-mode warning**: `:rw` emits warning; basic edits persist for simple files.
 
@@ -382,31 +406,31 @@ Acceptance: ref unit tests pass.
 - parse workbook.xml -> sheets
 - parse sharedStrings.xml
 - parse styles.xml minimal (enough for date detection)
-- `readxlsx`, `sheetnames`, `sheetcount`, `hassheet`, `sheet`
+- `read-xlsx`, `sheet-names`, `sheet-count`, `has-sheet-p`, `sheet`
 Acceptance: can open fixture and list sheets.
 
 ### M3 — Cell access & ranges
-- `getcell`, `getcellrange`, `getdata`
+- `get-cell`, `get-cell-range`, `get-data`
 - support "A1", "A1:B2", ":all", "A:B", "sheet!ref", named ranges
 Acceptance: read fixtures.
 
 ### M4 — Streaming iterators + caching
-- `eachrow` (SheetRow)
+- `each-row` (SheetRow)
 - caching toggle
 Acceptance: `enable-cache=nil` doesn’t grow memory on big_sparse fixture (basic sanity).
 
 ### M5 — Table API parity
-- `eachtablerow`, `gettable`, `readtable` with option parity
+- `each-table-row`, `get-table`, `read-table` with option parity
 - `infer_eltypes` behavior (typed columns)
 Acceptance: table fixtures match expected.
 
 ### M6 — Writing new files
-- `openxlsx :w` to create workbook
+- `open-xlsx :w` to create workbook
 - cell/range assignment
-- `writexlsx`
+- `write-xlsx`
 Acceptance: Excel opens produced file; roundtrip tests pass.
 
-### M7 — writetable/writetable!
+### M7 — write-table/write-table!
 - accept columns+labels and row-wise inputs
 - `anchor-cell` support
 Acceptance: fixtures generated by tests read back correctly.

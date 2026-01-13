@@ -5,16 +5,24 @@
   (:nicknames #:xlsx)
   (:export
    ;; Open/close
-   #:readxlsx #:openxlsx #:closexlsx #:with-xlsx #:writexlsx
+   #:read-xlsx #:open-xlsx #:close-xlsx #:with-xlsx #:write-xlsx
    ;; Workbook/sheets
-   #:sheetnames #:sheetcount #:hassheet #:sheet #:addsheet! #:rename!
+   #:sheet-names #:sheet-count #:has-sheet-p #:sheet #:add-sheet! #:rename-sheet!
    ;; Cells/ranges
-   #:getdata #:readdata #:getcell #:getcellrange
+   #:get-data #:read-data #:get-cell #:get-cell-range
+   #:+missing+ #:missing-p
+   ;; Internal utils often needed
+   #:col-name #:col-index #:parse-cell-ref #:cell-ref-to-string
    ;; Indexing sugar (optional API surface)
-   #:cell #:range #:sheetref #:named
+   #:cell #:range #:sheet-ref #:named
    ;; Iterators
-   #:eachrow #:row-number #:eachtablerow
+   #:each-row #:row-number #:do-rows #:each-table-row #:do-table-rows
+   #:make-sheet-iterator #:with-sheet-iterator ;; M7 exports
    ;; Tables
-   #:readtable #:gettable #:datatable-data #:datatable-column-labels
-   #:datatable-column-index #:writetable #:writetable!))
+   #:get-table #:read-table 
+   #:table #:table-name #:table-ref #:table-columns #:table-display-name
+   #:table-column #:table-column-name #:table-column-id
+   ;; Conditions
+   #:xlsx-error #:xlsx-parse-error #:sheet-missing-error
+   #:invalid-range-error #:read-only-error))
 
