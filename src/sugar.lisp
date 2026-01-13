@@ -50,29 +50,105 @@
   `(let ((,var (sheet ,workbook ,name-or-index)))
      ,@body))
 
-;;; 5. Quick Read
+;;; 5. Helper Functions (M11)
+
+(defun list-sheets (source)
+  "Return a list of sheet names from SOURCE (path or workbook)."
+  (if (typep source 'workbook)
+      (sheet-names source)
+      (with-xlsx (wb source)
+        (sheet-names wb))))
+
+(defun used-range (sheet)
+  "Calculate the used range of SHEET (bounding box of all non-missing cells).
+   Returns a RANGE-REF structure or NIL if empty."
+  (let ((min-r most-positive-fixnum)
+        (max-r 0)
+        (min-c most-positive-fixnum)
+        (max-c 0)
+        (count 0))
+    (maphash (lambda (coord cell)
+               (declare (ignore cell))
+               (let ((r (car coord))
+                     (c (cdr coord)))
+                 (setf min-r (min min-r r))
+                 (setf max-r (max max-r r))
+                 (setf min-c (min min-c c))
+                 (setf max-c (max max-c c))
+                 (incf count)))
+             (sheet-cells sheet))
+    (if (zerop count)
+        nil
+        (make-range-ref (make-cell-ref min-r min-c)
+                        (make-cell-ref max-r max-c)
+                        :sheet (sheet-name sheet)))))
+
+;;; 6. Smart Readers
+
+(defun resolve-smart-range (sheet desig)
+  "Resolve a range locator DESIG into a RANGE-REF with smart expansion.
+   - :ALL -> returns :ALL
+   - 'A1:B2' -> parsed range
+   - 'A1' -> parsed single cell range A1:A1
+   - 'A' -> Column A, trimmed to used-range height
+   - 1 -> Column 1 (A), trimmed to used-range height"
+  (cond
+    ((eq desig :all) :all)
+    ((typep desig 'range-ref) desig)
+    ((integerp desig) 
+     ;; Column index. Trim to used height.
+     (let ((ur (used-range sheet)))
+       (unless ur (return-from resolve-smart-range nil))
+       (make-range-ref (make-cell-ref (range-start-row ur) desig)
+                       (make-cell-ref (range-end-row ur) desig))))
+    ((stringp desig)
+     ;; Check if it's a column name only ("A", "AB")
+     (if (every #'alpha-char-p desig)
+         ;; Treated as column name
+         (let ((idx (col-index desig))
+               (ur (used-range sheet)))
+           (unless ur (return-from resolve-smart-range nil))
+           (make-range-ref (make-cell-ref (range-start-row ur) idx)
+                           (make-cell-ref (range-end-row ur) idx)))
+         ;; Else parse as ref
+         (if (find #\: desig)
+             (parse-cell-ref desig :range t)
+             ;; Single cell "A1" -> range "A1:A1"
+             (let ((cr (parse-cell-ref desig)))
+               (make-range-ref cr cr)))))
+    (t (error "Unknown range designator: ~A" desig))))
 
 (defun read-file (path &optional (sheet-id 1) (range :all))
   "Quickly read data from a file.
    Returns list of lists (rows).
    PATH: Path to .xlsx file.
    SHEET-ID: Sheet name or index (default 1).
-   RANGE: Cell range to read/scan (default :all)."
+   RANGE: Smart range selector.
+     - :all (default) - read all used rows
+     - 'A1:B2' - specific range
+     - 'A' - column A (trimmed)
+     - 1 - column 1 (trimmed)
+     - 'A1' - single cell"
   (with-xlsx (wb path)
     (let ((sh (sheet wb sheet-id)))
-      (if (eq range :all)
-          (map-rows #'identity sh)
-          ;; If explicit range "A1:B2"
-          (let ((range-struct (if (stringp range) (parse-cell-ref range :range t) range)))
-            ;; Simple iteration over the range
-            (let ((r1 (range-start-row range-struct))
-                  (c1 (range-start-col range-struct))
-                  (r2 (range-end-row range-struct))
-                  (c2 (range-end-col range-struct))
-                  (res '()))
-              (loop for r from r1 to r2 do
-                (let ((row '()))
-                  (loop for c from c1 to c2 do
-                    (push (get-data sh (cons r c)) row))
-                  (push (nreverse row) res)))
-              (nreverse res))))))) 
+      (let ((resolved (resolve-smart-range sh range)))
+        (cond
+          ((eq resolved :all)
+           (map-rows #'identity sh))
+          ((null resolved) 
+           ;; Empty sheet or range
+           nil)
+          ((typep resolved 'range-ref)
+           ;; Iterate range
+           (let ((r1 (range-start-row resolved))
+                 (c1 (range-start-col resolved))
+                 (r2 (range-end-row resolved))
+                 (c2 (range-end-col resolved))
+                 (res '()))
+             (loop for r from r1 to r2 do
+               (let ((row '()))
+                 (loop for c from c1 to c2 do
+                   (push (get-data sh (cons r c)) row))
+                 (push (nreverse row) res)))
+             (nreverse res)))
+          (t (error "Unable to resolve range"))))))) 
