@@ -12,6 +12,21 @@ Entries are reverse-chronological (newest first).
 
 
 
+### 2026-01-13 — Task: M10 Sugar API (Milestone: M10)
+**Goal:** Create a user-friendly, high-level API.
+**Summary:**
+- Implemented `src/sugar.lisp`.
+- Added `read-file` for one-shot data reading (with range support).
+- Added aliases `read-excel`, `save-excel`, `val`, `[]`.
+- Added `map-rows` utility.
+**Files changed:**
+- `src/sugar.lisp`: New file.
+- `src/iterators.lisp`: Added `do-rows` implementation.
+- `src/package.lisp`: Exported new symbols.
+**Commands run / verification:**
+- `ros -Q run --load test-sugar.lisp`
+**Result:** PASS
+
 ### 2026-01-13 — Task: M9 Edit Mode (Milestone: M9)
 **Goal:** Enable modifying existing XLSX files (read-modify-write).
 **Summary:**

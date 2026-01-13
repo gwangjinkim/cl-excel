@@ -109,6 +109,30 @@ For large datasets, use the streaming iterator to avoid loading the entire file 
       (unless row (return))
       (format t "Row ~D: ~A~%" (car row) (cdr row)))))
 ```
+### 6. Sugar API (User-Friendly Interface)
+
+For a more natural (Python-like) experience, use the "Sugar" API aliases.
+
+```lisp
+;; Quick Read (gets data as list of lists immediately)
+(cl-excel:read-file "data.xlsx") 
+
+;; Concise Workflow
+(cl-excel:with-xlsx (wb "data.xlsx" :mode :rw)
+  (cl-excel:with-sheet (s wb 1)
+    
+    ;; Val Get/Set (alias for get-data/get-cell)
+    (print (cl-excel:val s "A1")) 
+    
+    ;; Array-like syntax (alias for val)
+    (setf (cl-excel:[] s "B1") "Updated")
+    
+    ;; Functional Iteration
+    (cl-excel:map-rows (lambda (row) (print row)) s)
+    
+    ;; Save (alias for write-xlsx)
+    (cl-excel:save-excel wb "saved.xlsx")))
+```
 
 ---
 
