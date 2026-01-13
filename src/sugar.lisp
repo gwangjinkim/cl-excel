@@ -1,0 +1,70 @@
+(in-package #:cl-excel)
+
+;;; 1. File & Sheet Shortcuts
+
+(defun read-excel (source)
+  "Alias for READ-XLSX."
+  (read-xlsx source))
+
+(defun save-excel (workbook path &key overwrite)
+  "Alias for WRITE-XLSX."
+  (declare (ignore overwrite)) ;; write-xlsx generally overwrites in our impl
+  (write-xlsx workbook path))
+
+(defun sheet-of (workbook index-or-name)
+  "Alias for SHEET."
+  (sheet workbook index-or-name))
+
+;;; 2. Cell Access
+
+(defun val (sheet ref)
+  "Get value at REF (e.g. 'A1'). Alias for GET-DATA."
+  (get-data sheet ref))
+
+(defun (setf val) (new-value sheet ref)
+  "Set value at REF."
+  (setf (get-cell sheet ref) (make-cell new-value)))
+
+(defun [] (sheet ref)
+  "Alias for VAL."
+  (val sheet ref))
+
+(defun (setf []) (new-value sheet ref)
+  "Alias for (SETF VAL)."
+  (setf (val sheet ref) new-value))
+
+;;; 3. Iteration Sugar
+
+(defun map-rows (function sheet)
+  "Apply FUNCTION to each row in SHEET.
+   Returns a list of results."
+  (let ((results '()))
+    (do-rows (row sheet)
+      (push (funcall function row) results))
+    (nreverse results)))
+
+;;; 4. Context Macros
+
+(defmacro with-sheet ((var workbook name-or-index) &body body)
+  "Execute BODY with VAR bound to the specified sheet."
+  `(let ((,var (sheet ,workbook ,name-or-index)))
+     ,@body))
+
+;;; 5. Quick Read
+
+(defun read-file (path &optional (sheet-id 1) (range :all))
+  "Quickly read data from a file.
+   Returns list of lists (rows).
+   PATH: Path to .xlsx file.
+   SHEET-ID: Sheet name or index (default 1).
+   RANGE: Cell range to read (default :all - effectively all used rows for now)."
+  (with-xlsx (wb path)
+    (let ((sh (sheet wb sheet-id)))
+      (if (eq range :all)
+          ;; Read all rows logic
+          ;; For M10, currently we don't have a 'read-all-data' distinct from manual iteration for the whole sheet,
+          ;; but we can iterate.
+          ;; Actually, `read-table` does iteration. Let's do a simple row collector.
+          (map-rows #'identity sh)
+          ;; If specific range "A1:B2"
+          (get-data sh range))))) 

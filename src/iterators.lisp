@@ -31,3 +31,36 @@
          (unwind-protect
               (progn ,@body)
            (funcall ,cleanup-sym))))))
+
+(defmacro do-rows ((row-var sheet) &body body)
+  "Iterate over rows in SHEET (in-memory).
+   ROW-VAR is bound to the list of cell values for each row."
+  (let ((rows-sym (gensym "ROWS"))
+        (r-sym (gensym "R"))
+        (pair-sym (gensym "PAIR"))
+        (coord-sym (gensym "COORD"))
+        (cell-sym (gensym "CELL"))
+        (row-idx-sym (gensym "ROW-IDX")))
+    `(let ((,rows-sym (make-hash-table :test 'eql)))
+       ;; Group cells by row index (inefficient but necessary for hash-based storage)
+       (maphash (lambda (,coord-sym ,cell-sym)
+                  (push (cons (cdr ,coord-sym) (cell-value ,cell-sym)) 
+                        (gethash (car ,coord-sym) ,rows-sym)))
+                (sheet-cells ,sheet))
+       
+       (dolist (,row-idx-sym (sort (alexandria:hash-table-keys ,rows-sym) #'<))
+         (let* ((,pair-sym (sort (gethash ,row-idx-sym ,rows-sym) #'< :key #'car))
+                ;; Extract just values, filling gaps with +missing+ if needed? 
+                ;; For basic sugar, just values is fine, or simple list.
+                (,row-var (mapcar #'cdr ,pair-sym)))
+           ,@body)))))
+
+(defmacro do-table-rows ((row-var table-desig &optional sheet) &body body)
+  "Iterate over rows of a TABLE.
+   TABLE-DESIG can be a table object or name (if SHEET provided)."
+  (let ((tbl-sym (gensym "TBL")))
+    `(let ((,tbl-sym (if (typep ,table-desig 'table) 
+                         ,table-desig 
+                         (get-table (if ,sheet ,sheet (error "Sheet required for table name lookup")) ,table-desig))))
+       (dolist (,row-var (read-table (table-sheet ,tbl-sym) (table-name ,tbl-sym)))
+         ,@body))))

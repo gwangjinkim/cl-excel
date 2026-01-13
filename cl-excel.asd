@@ -30,7 +30,8 @@
      (:file "workbook-write")
      (:file "writer")
      (:file "iterators")
-     (:file "core")))))
+     (:file "core")
+     (:file "sugar")))))
 
 (asdf:defsystem #:cl-excel/tests
   :description "Test suite for cl-excel (M0)."
