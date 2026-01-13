@@ -4,7 +4,7 @@
 
 (defun test-write-table ()
   (format t "Testing Table Write...~%")
-  (let ((wb (make-instance 'cl-excel::workbook :id nil :rels nil))
+  (let ((wb (make-instance 'cl-excel::workbook))
         (sheet (make-instance 'cl-excel::sheet :name "DataSheet" :id 1)))
     
     (setf (cl-excel::workbook-sheets wb) (list sheet))
