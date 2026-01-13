@@ -126,6 +126,12 @@
                  (t (klacks:consume source)))))))
        (lambda () (close stream))))))
 
+(defun find-child-local (name node)
+  (cxml-stp:do-children (child node)
+    (when (and (typep child 'cxml-stp:element)
+               (string= (cxml-stp:local-name child) name))
+      (return child))))
+
 (defun read-sheet (zip sheet-meta shared-strings styles)
   "Read and parse a worksheet from the ZIP file."
   (let ((path (format nil "xl/worksheets/sheet~A.xml" (sheet-meta-id sheet-meta))))
@@ -135,7 +141,7 @@
       
       (let* ((dom (cxml:parse-stream stream (cxml-stp:make-builder)))
              (root (cxml-stp:document-element dom))
-             (sheet-data (cxml-stp:find-child "sheetData" root))
+             (sheet-data (find-child-local "sheetData" root))
              (cells (make-hash-table :test 'equal))
              (sheet-obj (make-instance 'sheet 
                                        :name (sheet-meta-name sheet-meta)
@@ -143,7 +149,7 @@
                                        :rel-id (sheet-meta-rel-id sheet-meta)
                                        :cells cells)))
         
-        (let ((dim-node (cxml-stp:find-child "dimension" root)))
+        (let ((dim-node (find-child-local "dimension" root)))
           (when dim-node
             (setf (sheet-dimension sheet-obj) 
                   (cxml-stp:attribute-value dim-node "ref"))))
@@ -157,12 +163,12 @@
                          (type (or (cxml-stp:attribute-value c-node "t") "n")) 
                          (style-id-attr (cxml-stp:attribute-value c-node "s"))
                          (style-id (if style-id-attr (parse-integer style-id-attr) nil))
-                         (v-node (cxml-stp:find-child "v" c-node))
-                         (is-node (cxml-stp:find-child "is" c-node))
+                         (v-node (find-child-local "v" c-node))
+                         (is-node (find-child-local "is" c-node))
                          (raw-val (cond 
                                     (v-node (cxml-stp:data (cxml-stp:first-child v-node)))
                                     (is-node 
-                                     (let ((t-node (cxml-stp:find-child "t" is-node)))
+                                     (let ((t-node (find-child-local "t" is-node)))
                                        (if t-node (cxml-stp:data (cxml-stp:first-child t-node)) "")))
                                     (t nil))))
                     

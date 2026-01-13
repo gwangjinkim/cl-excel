@@ -7,9 +7,9 @@
    ;; Open/close
    #:read-xlsx #:open-xlsx #:close-xlsx #:with-xlsx #:write-xlsx
    ;; Workbook/sheets
-   #:sheet-names #:sheet-count #:has-sheet-p #:sheet #:add-sheet! #:rename-sheet!
+   #:sheet-names #:sheet-count #:has-sheet-p #:sheet #:add-sheet! #:rename-sheet! #:sheet-name #:sheet-cells
    ;; Cells/ranges
-   #:get-data #:read-data #:get-cell #:get-cell-range
+   #:get-data #:read-data #:get-cell #:get-cell-range #:cell-value
    #:+missing+ #:missing-p
    ;; Internal utils often needed
    #:col-name #:col-index #:parse-cell-ref #:cell-ref-to-string

@@ -2,10 +2,10 @@
 (asdf:load-system :cl-excel)
 
 (format t "Testing Legacy DOM Read...~%")
-(let* ((wb (cl-excel:read-xlsx "basic_types.xlsx"))
-       (sheets (cl-excel:workbook-sheets wb))
-       (sheet (first sheets)))
-  (format t "Sheets: ~S~%" (length sheets))
+(let* ((wb (cl-excel:read-xlsx "tests/fixtures/basic_types.xlsx"))
+       (sheet-count (cl-excel:sheet-count wb))
+       (sheet (cl-excel:sheet wb 1)))
+  (format t "Sheets: ~S~%" sheet-count)
   (format t "First Sheet Name: ~A~%" (cl-excel:sheet-name sheet))
   (format t "Cells count: ~A~%" (hash-table-count (cl-excel:sheet-cells sheet)))
   (let ((cell (gethash (cons 2 1) (cl-excel:sheet-cells sheet)))) ;; A2 "Hello"
