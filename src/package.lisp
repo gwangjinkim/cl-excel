@@ -19,7 +19,7 @@
    #:each-row #:row-number #:do-rows #:each-table-row #:do-table-rows
    #:make-sheet-iterator #:with-sheet-iterator ;; M7 exports
    ;; Tables
-   #:get-table #:read-table 
+   #:get-table #:read-table #:add-table! 
    #:table #:table-name #:table-ref #:table-columns #:table-display-name
    #:table-column #:table-column-name #:table-column-id
    ;; Conditions

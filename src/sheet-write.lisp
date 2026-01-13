@@ -1,5 +1,3 @@
-;;;; src/sheet-write.lisp
-
 (in-package #:cl-excel)
 
 (defun write-sheet-xml (sheet stream)
@@ -11,9 +9,6 @@
       
       ;; Sheet Data
       (cxml:with-element "sheetData"
-        ;; To write rows efficiently, we need to sort or iterate the hash table.
-        ;; Since cells are (cons row col), we need to group by row first.
-        ;; For M6 large output might be slow, but correctness first.
         (let ((rows (make-hash-table :test 'eql)))
           ;; Group cells by row index
           (maphash (lambda (coord cell)
@@ -40,7 +35,6 @@
                       (cxml:with-element "c"
                         (cxml:attribute "r" ref)
                         
-                        ;; Determine type if not set (simple inference for new cells)
                         (let ((final-type (or type 
                                              (cond 
                                                ((numberp val) "n")
@@ -57,4 +51,13 @@
                             ((string= final-type "b")
                              (cxml:with-element "v" (cxml:text (if val "1" "0"))))
                             (t ;; Number / default
-                             (cxml:with-element "v" (cxml:text (format nil "~A" val)))))))))))))))))) ; Close sheetData, worksheet
+                             (cxml:with-element "v" (cxml:text (format nil "~A" val)))))))))))))))
+      
+      ;; Table Parts (must be after sheetData)
+      (when (sheet-tables sheet)
+        (cxml:with-element "tableParts"
+          (cxml:attribute "count" (format nil "~D" (length (sheet-tables sheet))))
+          (loop for tbl in (sheet-tables sheet)
+                for i from 1
+                do (cxml:with-element "tablePart"
+                     (cxml:attribute "r:id" (format nil "rId~D" i)))))))))

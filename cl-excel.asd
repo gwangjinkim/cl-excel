@@ -24,6 +24,7 @@
      (:file "styles")
      (:file "sheet-read")
      (:file "table-read")
+     (:file "table-write")
      (:file "workbook-read")
      (:file "sheet-write")
      (:file "workbook-write")

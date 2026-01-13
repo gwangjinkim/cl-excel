@@ -2,8 +2,10 @@
 
 (in-package #:cl-excel)
 
-(defun write-content-types-xml (stream)
-  "Write [Content_Types].xml to STREAM."
+(defun write-content-types-xml (stream &key (sheets '("sheet1")) (tables nil))
+  "Write [Content_Types].xml to STREAM.
+   SHEETS is a list of sheet names (e.g. 'sheet1') or objects.
+   TABLES is a list of table part names (e.g. 'table1')."
   (cxml:with-xml-output (cxml:make-character-stream-sink stream :canonical nil)
     (cxml:with-element "Types"
       (cxml:attribute "xmlns" "http://schemas.openxmlformats.org/package/2006/content-types")
@@ -23,13 +25,19 @@
         (cxml:attribute "PartName" "/xl/styles.xml")
         (cxml:attribute "ContentType" "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"))
       
-      ;; Add sheets ?? Since names are dynamic, we usually iterate logic.
-      ;; For now, assume a fixed structure or pass sheet list?
-      ;; To keep it decoupled, we might need a better architecture, but let's assume
-      ;; default sheet1.
-      (cxml:with-element "Override"
-        (cxml:attribute "PartName" "/xl/worksheets/sheet1.xml")
-        (cxml:attribute "ContentType" "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml")))))
+      ;; Sheets
+      (dolist (sh sheets)
+        ;; If sh is just a string name like "sheet1"
+        (let ((name (if (stringp sh) sh (format nil "sheet~D" (sheet-id sh)))))
+          (cxml:with-element "Override"
+            (cxml:attribute "PartName" (format nil "/xl/worksheets/~A.xml" name))
+            (cxml:attribute "ContentType" "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"))))
+      
+      ;; Tables
+      (dolist (tbl tables)
+        (cxml:with-element "Override"
+          (cxml:attribute "PartName" (format nil "/xl/tables/~A.xml" tbl))
+          (cxml:attribute "ContentType" "application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml"))))))
 
 (defun write-rels-xml (stream)
   "Write _rels/.rels to STREAM."
