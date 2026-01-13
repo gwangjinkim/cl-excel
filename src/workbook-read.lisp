@@ -98,12 +98,26 @@
   "Close the workbook and underlying resources."
   (close-zip (workbook-zip workbook)))
 
-(defmacro with-xlsx ((var source &key mode enable-cache) &body body)
-  (declare (ignore mode enable-cache)) ;; handled later
-  `(let ((,var (read-xlsx ,source)))
+(defun open-xlsx (source &key (mode :read) (enable-cache t))
+  "Open XLSX file at SOURCE.
+   MODE: :read (default), :write (new file), :rw (edit existing).
+   ENABLE-CACHE: Ignored for now (always true for DOM read)."
+  (declare (ignore enable-cache))
+  (case mode
+    (:read (read-xlsx source))
+    (:write (make-instance 'workbook :zip nil :sheets nil))
+    (:rw 
+     (warn "Opening XLSX in EDIT mode (:rw). This is a best-effort implementation. 
+            Charts, drawings, and complex styles may be lost upon saving.")
+     (read-xlsx source))
+    (t (error "Unknown mode: ~A" mode))))
+
+(defmacro with-xlsx ((var source &key (mode :read) (enable-cache t)) &body body)
+  `(let ((,var (open-xlsx ,source :mode ,mode :enable-cache ,enable-cache)))
      (unwind-protect
           (progn ,@body)
-       (close-xlsx ,var))))
+       (when (and (workbook-zip ,var) (not (eq ,mode :write)))
+         (close-xlsx ,var)))))
 
 ;;; Public API impl
 

@@ -49,21 +49,28 @@
         (cxml:attribute "Type" "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument")
         (cxml:attribute "Target" "xl/workbook.xml")))))
 
-(defun write-workbook-rels-xml (stream)
+
+(defun write-workbook-rels-xml (stream &key sheets)
   "Write xl/_rels/workbook.xml.rels to STREAM."
   (cxml:with-xml-output (cxml:make-character-stream-sink stream :canonical nil)
     (cxml:with-element "Relationships"
       (cxml:attribute "xmlns" "http://schemas.openxmlformats.org/package/2006/relationships")
-      (cxml:with-element "Relationship"
-        (cxml:attribute "Id" "rId1")
-        (cxml:attribute "Type" "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet")
-        (cxml:attribute "Target" "worksheets/sheet1.xml"))
-      (cxml:with-element "Relationship"
-        (cxml:attribute "Id" "rId2")
-        (cxml:attribute "Type" "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles")
-        (cxml:attribute "Target" "styles.xml")))))
+      ;; Sheets
+      (loop for sh in sheets
+            for i from 1
+            do (let ((name (if (stringp sh) sh (format nil "sheet~D" (sheet-id sh)))))
+                 (cxml:with-element "Relationship"
+                   (cxml:attribute "Id" (format nil "rId~D" i))
+                   (cxml:attribute "Type" "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet")
+                   (cxml:attribute "Target" (format nil "worksheets/~A.xml" name)))))
+      ;; Styles (id = count + 1)
+      (let ((style-id (1+ (length sheets))))
+        (cxml:with-element "Relationship"
+          (cxml:attribute "Id" (format nil "rId~D" style-id))
+          (cxml:attribute "Type" "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles")
+          (cxml:attribute "Target" "styles.xml"))))))
 
-(defun write-workbook-xml (stream)
+(defun write-workbook-xml (stream &key sheets)
   "Write xl/workbook.xml to STREAM."
   (cxml:with-xml-output (cxml:make-character-stream-sink stream :canonical nil)
     (cxml:with-element "workbook"
@@ -71,10 +78,14 @@
       (cxml:attribute "xmlns:r" "http://schemas.openxmlformats.org/officeDocument/2006/relationships")
       
       (cxml:with-element "sheets"
-        (cxml:with-element "sheet"
-          (cxml:attribute "name" "Sheet1")
-          (cxml:attribute "sheetId" "1")
-          (cxml:attribute "r:id" "rId1"))))))
+        (loop for sh in sheets
+              for i from 1
+              do (let ((name (if (typep sh 'sheet) (sheet-name sh) "Sheet1"))
+                       (id (if (typep sh 'sheet) (sheet-id sh) 1)))
+                   (cxml:with-element "sheet"
+                     (cxml:attribute "name" name)
+                     (cxml:attribute "sheetId" (format nil "~D" id))
+                     (cxml:attribute "r:id" (format nil "rId~D" i)))))))))
 
 (defun write-styles-xml (stream)
   "Write minimal xl/styles.xml to STREAM."
