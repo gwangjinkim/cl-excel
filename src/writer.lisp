@@ -69,11 +69,11 @@
         
         ;; 3. xl/workbook.xml
         (write-entry-xml zip "xl/workbook.xml" 
-                         (lambda (s) (write-workbook-xml s))) ;; TODO: Update write-workbook-xml to use real sheets!
+                         (lambda (s) (write-workbook-xml s :sheets (workbook-sheets wb))))
         
         ;; 4. xl/_rels/workbook.xml.rels
         (write-entry-xml zip "xl/_rels/workbook.xml.rels" 
-                         (lambda (s) (write-workbook-rels-xml s))) ;; TODO: Dynamic
+                         (lambda (s) (write-workbook-rels-xml s :sheets (workbook-sheets wb))))
         
         ;; 5. xl/styles.xml
         (write-entry-xml zip "xl/styles.xml" 
