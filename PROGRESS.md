@@ -12,6 +12,22 @@ Entries are reverse-chronological (newest first).
 
 
 
+### 2026-01-13 — Task: M11 Intelligent DSL (Milestone: M11)
+**Goal:** Make the Sugar API "brain friendly" with intelligent range resolution.
+**Summary:**
+- Implemented `resolve-smart-range`:
+  - Handles "A" (Column A, auto-trimmed to data height).
+  - Handles "1" or integer 1 (Column A, auto-trimmed).
+  - Handles "A1" (Single cell range).
+- Added `list-sheets` (works on path or workbook) and `used-range` (bounding box).
+- Updated `read-file` to use smart ranges.
+**Files changed:**
+- `src/sugar.lisp`: Added logic.
+- `src/package.lisp`: Exported new symbols.
+**Commands run / verification:**
+- `ros -Q run --load test-smart.lisp`
+**Result:** PASS
+
 ### 2026-01-13 — Task: M10 Sugar API (Milestone: M10)
 **Goal:** Create a user-friendly, high-level API.
 **Summary:**

@@ -33,11 +33,19 @@ Just want the data?
 
 ;; Read a specific sheet and range
 (cl-excel:read-file "data.xlsx" "Sheet1" "A1:B10")
+
+;; Smart Ranges (M11)
+(cl-excel:read-file "data.xlsx" 1 "A")  ;; Read Column A (auto-trimmed to data)
+(cl-excel:read-file "data.xlsx" 1 1)    ;; Read Column 1 (same as "A")
+(cl-excel:read-file "data.xlsx" 1 "A1") ;; Read Single Cell "A1"
 ```
 
 ### 2. Concise Access
 
 ```lisp
+;; List sheets without opening explicitly
+(print (cl-excel:list-sheets "data.xlsx"))
+
 (cl-excel:with-xlsx (wb "data.xlsx" :mode :rw)
   (cl-excel:with-sheet (s wb 1)
     
