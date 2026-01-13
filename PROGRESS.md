@@ -12,6 +12,35 @@ Entries are reverse-chronological (newest first).
 
 
 
+### 2026-01-13 — Task: M9 Edit Mode (Milestone: M9)
+**Goal:** Enable modifying existing XLSX files (read-modify-write).
+**Summary:**
+- Implemented `open-xlsx` with `:mode :read|:write|:rw`.
+- Updated `write-xlsx` and workbook/relationships writers to support dynamic multi-sheet generation from the in-memory workbook model.
+- Added "best-effort" warning for `:rw` mode (unsupported parts are dropped).
+**Files changed:**
+- `src/workbook-read.lisp`: Added `open-xlsx`, updated `with-xlsx`.
+- `src/workbook-write.lisp`: Made `write-workbook-xml` and relations dynamic.
+- `src/writer.lisp`: Updated orchestration to pass sheet objects.
+**Commands run / verification:**
+- `ros -Q run --load test-edit.lisp`
+**Result:** PASS
+
+### 2026-01-13 — Task: M8 Writing Tables (Milestone: M8)
+**Goal:** Support creating and writing Excel Tables (`ListObject`).
+**Summary:**
+- Implemented `add-table!` API to Create tables from data.
+- Implemented `write-table-xml` to generate `tableN.xml`.
+- Integrated table registration into `[Content_Types].xml` and `.rels`.
+**Files changed:**
+- `src/table-write.lisp`: New file.
+- `src/core.lisp`: Added `add-table!`.
+- `src/workbook-write.lisp`: Updated Content Types.
+- `src/writer.lisp`: Updated `write-xlsx` to collect and write tables.
+**Commands run / verification:**
+- `ros -Q run --load test-table-write.lisp`
+**Result:** PASS
+
 
 ### 2025-12-31 — Task: M0 skeleton + minimal tests (Milestone: M0)
 **Goal:** Establish a buildable ASDF skeleton for cl-excel with a minimal passing test suite.
