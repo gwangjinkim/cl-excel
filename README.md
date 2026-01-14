@@ -22,6 +22,44 @@ And I generated this library (cl-excel) using AI.
 (asdf:load-system :cl-excel)
 ```
 
+If you are using Quicklisp, do:
+
+```bash
+cd ~/quicklisp/local-projects/
+git clone git@github.c`om:gwangjinkim/cl-excel.git
+
+# start your lisp by:
+sbcl
+
+# or - if you use roswell:
+ros run
+```
+
+And then in your lisp:
+
+```lisp
+(ql:quickload :cl-excel)
+```
+
+Alternatively, you can git clone this into another folder and symlink that project your local-projects:
+
+```bash
+cd ~/your/other-folder/
+git clone git@github.c`om:gwangjinkim/cl-excel.git 
+```
+
+Make SBCL load the `other-folder` in addition to your Quicklisp `local-folder` by:
+```bash
+nano ~/.sbclrc
+```
+And enter there:
+```lisp
+(push "~/your/other-folder/" ql:*local-project-directories*)
+```
+And save it. Now, Quicklisp will also see all the projects in the `other-folder`.
+
+---
+
 ## Quickstart (The Natural Way)
 
 The "Sugar" API is designed to be concise and intuitive, similar to Python's pandas or openpyxl.
