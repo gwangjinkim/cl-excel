@@ -29,7 +29,16 @@
   "Alias for VAL."
   (val sheet ref))
 
+
 (defun (setf []) (new-value sheet ref)
+  "Alias for (SETF VAL)."
+  (setf (val sheet ref) new-value))
+
+(defun cell (sheet ref)
+  "Alias for VAL."
+  (val sheet ref))
+
+(defun (setf cell) (new-value sheet ref)
   "Alias for (SETF VAL)."
   (setf (val sheet ref) new-value))
 

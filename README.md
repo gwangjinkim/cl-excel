@@ -91,7 +91,7 @@ Just want the data?
 (cl-excel:list-examples)
 
 ;; Get path to an example file
-(defparameter *xlsx* (cl-excel:example-path "basic_types.xlsx"))
+(defparameter *xlsx* (cl-excel:example-path "test_table.xlsx"))
 
 ;; Read the first sheet as a list of lists
 (cl-excel:read-file *xlsx*) 
@@ -110,15 +110,15 @@ Just want the data?
 
 ```lisp
 ;; List sheets without opening explicitly
-(print (cl-excel:list-sheets "data.xlsx"))
+(print (cl-excel:list-sheets *xlsx*))
 
-(cl-excel:with-xlsx (wb "data.xlsx" :mode :rw)
+(cl-excel:with-xlsx (wb *xlsx* :mode :rw)
   (cl-excel:with-sheet (s wb 1)
     
-    ;; Get Value using [] or val
+    ;; Get Value using `[]` or `val` or `cell`
     (print (cl-excel:[] s "A1")) 
     
-    ;; Set Value
+    ;; Set Value `[]` or `val` or `cell`
     (setf (cl-excel:[] s "B1") "Updated")
     
     ;; Iterate rows
@@ -145,9 +145,9 @@ If you are coming from Julia, here is how `cl-excel` compares.
 **Example Port:**
 
 ```lisp
-(let ((xf (cl-excel:read-excel "data.xlsx")))
-  (let ((sh (cl-excel:sheet-of xf "Sheet1")))
-     (format t "Cell A1 is: ~A~%" (cl-excel:[] sh "A1"))))
+(let ((wb (cl-excel:read-excel *xlsx*)))
+  (let ((sh (cl-excel:sheet-of wb "Sheet1")))
+     (format t "Cell A1 is: ~A~%" (cl-excel:cell sh "A1"))))
 ```
 
 ---
@@ -190,7 +190,7 @@ For large files, use iterators to keep memory usage low.
 
 - `read-file (path &optional sheet range)`: High-level reader.
 - `read-excel (path)` / `save-excel (wb path)`: File I/O aliases.
-- `val (sheet ref)` / `[] (sheet ref)`: Cell accessors.
+- `val (sheet ref)` / `[] (sheet ref)` / `cell (sheet ref)`: Cell accessors.
 - `map-rows (fn sheet)`: Functional iteration.
 - `wb`, `sheet`, `cell`: Low-level constructors if needed.
 
