@@ -76,34 +76,51 @@ Or simply symlink your `other-folder/` into your `local-projects` folder.
 
 The "Sugar" API is designed to be concise and intuitive, similar to Python's pandas or openpyxl.
 
+### 0. Do This First
+
+```lisp
+(ql:quickload :cl-excel)
+
+(use-package :cl-excel)   ;; to get rid of `cl-excel:`
+
+
+;; List available example Excel files in this package
+(list-examples)
+
+;; Get full absolute path from an example file
+(example-path "test_table.xlsx")
+
+;; Define an example path
+(defparameter *xlsx* (cl-excel:example-path "test_table.xlsx"))
+
+;; List all sheet names of an Excel file
+(list-sheets *xlsx*) ;; => ("Sheet1")
+
+```
+
 ### 1. One-Liner Read
 
 Just want the data?
 
 ```lisp
-;; load asdf
-(require :asdf)
-
-;; load this package
-(ql:quickload :cl-excel)
-
-;; List available examples
-(cl-excel:list-examples)
-
-;; Get path to an example file
-(defparameter *xlsx* (cl-excel:example-path "test_table.xlsx"))
-
 ;; Read the first sheet as a list of lists
-(cl-excel:read-file *xlsx*) 
+(read-file *xlsx*) 
 ;; => (("Name" "Age") ("Alice" 30) ("Bob" 25))
 
 ;; Read a specific sheet and range
-(cl-excel:read-file *xlsx* "Sheet1" "A1:B10")
+(read-file *xlsx* "Sheet1" "A1:B10") ;; Not auto-trimmed! Empty cells are `#<MISSING>`
+
+;; You can use index number (1-based) instead of the sheet name
+(read-file *xlsx* 1 "A1:B10")
+
+
 
 ;; Smart Ranges (M11)
-(cl-excel:read-file *xlsx* 1 "A")  ;; Read Column A (auto-trimmed to data)
-(cl-excel:read-file *xlsx* 1 1)    ;; Read Column 1 (same as "A")
-(cl-excel:read-file *xlsx* 1 "A1") ;; Read Single Cell "A1"
+(cl-excel:read-file *xlsx* 1 "B")  ;; Read Column A (auto-trimmed)
+(cl-excel:read-file *xlsx* 1 2)    ;; Read Row 2 (auto-trimmed)
+(cl-excel:read-file *xlsx* 1 "B2") ;; Read Single Cell "A1"
+(cl-excel:read-file *xlsx* 1 "A:C") ;; Read Column A to C (auto-trimmed in width)
+(cl-excel:read-file *xlsx* 1 "1:5") ;; Read Rows 1 to 5 (auto-trimmed in width)
 ```
 
 ### 2. Concise Access
@@ -112,20 +129,20 @@ Just want the data?
 ;; List sheets without opening explicitly
 (print (cl-excel:list-sheets *xlsx*))
 
-(cl-excel:with-xlsx (wb *xlsx* :mode :rw)
-  (cl-excel:with-sheet (s wb 1)
+(with-xlsx (wb *xlsx* :mode :rw)
+  (with-sheet (s wb 1)
     
     ;; Get Value using `[]` or `val` or `cell`
-    (print (cl-excel:[] s "A1")) 
+    (print (cell s "A1")) 
     
     ;; Set Value `[]` or `val` or `cell`
-    (setf (cl-excel:[] s "B1") "Updated")
+    (setf (cell s "B1") "Updated")
     
     ;; Iterate rows
-    (cl-excel:map-rows (lambda (row) (print row)) s)
+    (map-rows (lambda (row) (print row)) s)
     
     ;; Save changes
-    (cl-excel:save-excel wb "saved.xlsx")))
+    (save-excel wb "saved.xlsx")))
 ```
 
 ---

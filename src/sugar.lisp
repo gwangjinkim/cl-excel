@@ -98,33 +98,72 @@
   "Resolve a range locator DESIG into a RANGE-REF with smart expansion.
    - :ALL -> returns :ALL
    - 'A1:B2' -> parsed range
-   - 'A1' -> parsed single cell range A1:A1
    - 'A' -> Column A, trimmed to used-range height
-   - 1 -> Column 1 (A), trimmed to used-range height"
+   - 1 -> Row 1, trimmed to used-range width
+   - '1' -> Row 1
+   - '1:3' -> Rows 1 to 3
+   - 'A1' -> parsed single cell range A1:A1"
   (cond
     ((eq desig :all) :all)
     ((typep desig 'range-ref) desig)
     ((integerp desig) 
-     ;; Column index. Trim to used height.
+     ;; Row index. Trim to used width.
      (let ((ur (used-range sheet)))
        (unless ur (return-from resolve-smart-range nil))
-       (make-range-ref (make-cell-ref (range-start-row ur) desig)
-                       (make-cell-ref (range-end-row ur) desig))))
+       (make-range-ref (make-cell-ref desig (range-start-col ur))
+                       (make-cell-ref desig (range-end-col ur)))))
     ((stringp desig)
-     ;; Check if it's a column name only ("A", "AB")
-     (if (every #'alpha-char-p desig)
-         ;; Treated as column name
-         (let ((idx (col-index desig))
-               (ur (used-range sheet)))
-           (unless ur (return-from resolve-smart-range nil))
-           (make-range-ref (make-cell-ref (range-start-row ur) idx)
-                           (make-cell-ref (range-end-row ur) idx)))
-         ;; Else parse as ref
-         (if (find #\: desig)
-             (parse-cell-ref desig :range t)
-             ;; Single cell "A1" -> range "A1:A1"
-             (let ((cr (parse-cell-ref desig)))
-               (make-range-ref cr cr)))))
+     (cond 
+       ;; Case: "A", "AB" -> Column
+       ((every #'alpha-char-p desig)
+        (let ((idx (col-index desig))
+              (ur (used-range sheet)))
+          (unless ur (return-from resolve-smart-range nil))
+          (make-range-ref (make-cell-ref (range-start-row ur) idx)
+                          (make-cell-ref (range-end-row ur) idx))))
+       
+       ;; Case: "1", "10" -> Row
+       ((every #'digit-char-p desig)
+        (let ((r (parse-integer desig))
+              (ur (used-range sheet)))
+          (unless ur (return-from resolve-smart-range nil))
+          (make-range-ref (make-cell-ref r (range-start-col ur))
+                          (make-cell-ref r (range-end-col ur)))))
+       
+       ;; See if it has a colon
+       ((find #\: desig)
+        (let ((parts (uiop:split-string desig :separator ":")))
+          (if (= (length parts) 2)
+              (cond
+                ;; Case: "1:5" -> Row Range
+                ((and (every #'digit-char-p (first parts))
+                      (every #'digit-char-p (second parts)))
+                 (let ((r1 (parse-integer (first parts)))
+                       (r2 (parse-integer (second parts)))
+                       (ur (used-range sheet)))
+                   (unless ur (return-from resolve-smart-range nil))
+                   (make-range-ref (make-cell-ref r1 (range-start-col ur))
+                                   (make-cell-ref r2 (range-end-col ur)))))
+                
+                ;; Case: "A:C" -> Column Range
+                ((and (every #'alpha-char-p (first parts))
+                      (every #'alpha-char-p (second parts)))
+                 (let ((c1 (col-index (first parts)))
+                       (c2 (col-index (second parts)))
+                       (ur (used-range sheet)))
+                   (unless ur (return-from resolve-smart-range nil))
+                   (make-range-ref (make-cell-ref (range-start-row ur) c1)
+                                   (make-cell-ref (range-end-row ur) c2))))
+
+                ;; Case: "A1:B2" -> Standard identifier
+                (t (parse-cell-ref desig :range t)))
+              
+              ;; Fallback for weird split
+              (parse-cell-ref desig :range t))))
+       
+       ;; Fallback: Single cell "A1" -> range "A1:A1"
+       (t (let ((cr (parse-cell-ref desig)))
+            (make-range-ref cr cr)))))
     (t (error "Unknown range designator: ~A" desig))))
 
 (defun read-file (path &optional (sheet-id 1) (range :all))
@@ -136,7 +175,8 @@
      - :all (default) - read all used rows
      - 'A1:B2' - specific range
      - 'A' - column A (trimmed)
-     - 1 - column 1 (trimmed)
+     - 1 - row 1 (trimmed)
+     - '1:3' - rows 1 to 3 (trimmed)
      - 'A1' - single cell"
   (with-xlsx (wb path)
     (let ((sh (sheet wb sheet-id)))

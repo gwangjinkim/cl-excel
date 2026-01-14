@@ -11,6 +11,23 @@ Entries are reverse-chronological (newest first).
 
 
 
+### 2026-01-14 — Refactor: Smart Ranges & Aliases (Milestone: M11)
+**Goal:** Align "Sugar" API with user intuition.
+**Summary:**
+- Added alias `cell` for `val`/`[]`.
+- Refactored `resolve-smart-range`:
+    - Integers (`1`) and Numeric Strings (`"1"`) now refer to **Rows** (trimmed to data).
+    - Added Row Range support: `"1:5"`.
+    - Added Column Range support: `"A:C"`.
+- Updated `README.md` and fixed regression tests.
+**Files changed:**
+- `src/sugar.lisp`: Logic updates.
+- `src/package.lisp`: Exports.
+- `README.md`: Documentation.
+**Verification:**
+- `test-cell.lisp` and `test-smart-rows.lisp`.
+**Result:** PASS
+
 ### 2026-01-14 — Refactor: Robust Resource Management (Milestone: M7/M10)
 **Goal:** Ensure `with-xlsx` automatically releases resources.
 **Summary:**
