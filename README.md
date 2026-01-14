@@ -197,4 +197,4 @@ This library is currently in **Beta** (M10 complete).
 
 ## License
 
-MIT License.
+GPL-3.0 License.
