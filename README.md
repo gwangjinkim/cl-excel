@@ -191,8 +191,9 @@ This library is currently in **Beta** (M10 complete).
 
 **Future Plans:**
 - Better style preservation in Edit Mode.
-- Support for Formula calculation (currently reads cached values).
 - Charts and Drawings support.
+- Formulas are not in my interest. The idea is rather Excel as input/output format
+  for humans (Scientists etc. LOVE Excel as a document format).
 
 ## License
 
