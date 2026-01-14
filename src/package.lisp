@@ -26,7 +26,7 @@
    #:xlsx-error #:xlsx-parse-error #:sheet-missing-error
    #:invalid-range-error #:read-only-error
    ;; Sugar (M10/M11)
-   #:read-excel #:save-excel #:sheet-of #:val #:[] #:cell 
+   #:read-excel #:save-excel #:sheet-of #:val #:[] #:c 
    #:map-rows #:with-sheet #:read-file
    #:list-sheets #:used-range #:with-xlsx-save
    #:list-examples #:example-path))

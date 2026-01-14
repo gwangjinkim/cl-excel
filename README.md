@@ -134,11 +134,11 @@ Just want the data?
 (with-xlsx (wb *xlsx* :mode :rw)
   (with-sheet (s wb 1)
     
-    ;; Get Value using `[]` or `val` or `cell`
-    (print (cell s "A1")) 
+    ;; Get Value using `[]` or `val` or `c`
+    (print (c s "A1")) 
     
-    ;; Set Value `[]` or `val` or `cell`
-    (setf (cell s "B1") "Updated")
+    ;; Set Value `[]` or `val` or `c`
+    (setf (c s "B1") "Updated")
     
     ;; Iterate rows
     (map-rows (lambda (row) (print row)) s)
