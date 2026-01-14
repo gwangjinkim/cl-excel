@@ -116,7 +116,7 @@
   `(let ((,var (open-xlsx ,source :mode ,mode :enable-cache ,enable-cache)))
      (unwind-protect
           (progn ,@body)
-       (when (and (workbook-zip ,var) (not (eq ,mode :write)))
+       (when (and ,var (not (eq ,mode :write)))
          (close-xlsx ,var)))))
 
 ;;; Public API impl

@@ -11,6 +11,20 @@ Entries are reverse-chronological (newest first).
 
 
 
+### 2026-01-14 — Refactor: Robust Resource Management (Milestone: M7/M10)
+**Goal:** Ensure `with-xlsx` automatically releases resources.
+**Summary:**
+- Refactored `with-xlsx` to use `unwind-protect` and verify `close-xlsx` is called.
+- Updated documentation to reflect that explicit closing is no longer needed within `with-` blocks.
+- Added demo utilities `list-examples`, `example-path`.
+**Files changed:**
+- `src/workbook-read.lisp`: Refactored macro.
+- `src/sugar.lisp`: Added demo utils.
+- `README.md`: Updated examples.
+**Verification:**
+- `test-with-xlsx.lisp` logic test.
+**Result:** PASS
+
 ### 2026-01-14 — Task: Refactor Test Fixtures
 **Goal:** Organize test files and ensure reliable path access.
 **Summary:**
