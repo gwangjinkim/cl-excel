@@ -10,6 +10,10 @@
 | **Streaming** | ✅ Memory-efficient Iterators |
 | **Styles** | ⚠️ Basic (Dates/Formats only) |
 
+Another library for excel files which I generated in the past is: https://github.com/a1b10/cl-xlsx
+But this library now can not only read but also write to excel files.
+And I generated this library (cl-excel) using AI.
+
 ## Installation
 
 **cl-excel** is available via ASDF/Quicklisp (local).
