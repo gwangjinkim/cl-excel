@@ -2,7 +2,7 @@
 
 (defpackage #:cl-excel
   (:use #:cl)
-  (:nicknames #:xlsx)
+  (:nicknames #:excel)
   (:export
    ;; Open/close
    #:read-xlsx #:open-xlsx #:close-xlsx #:with-xlsx #:write-xlsx
