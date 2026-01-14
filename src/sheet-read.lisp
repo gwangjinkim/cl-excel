@@ -96,6 +96,7 @@
                                                      (klacks:consume source))
                                               (return))))
                                       ;; Consume </v>
+                                      (setf raw-val txt)
                                     (klacks:find-event source :end-element)))
                                    ((and (eq ck :start-element) (string= (klacks:current-lname source) "is"))
                                     (klacks:consume source)

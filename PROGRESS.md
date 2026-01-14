@@ -11,6 +11,33 @@ Entries are reverse-chronological (newest first).
 
 
 
+### 2026-01-14 — Task: Refactor Test Fixtures
+**Goal:** Organize test files and ensure reliable path access.
+**Summary:**
+- Moved all Excel files (`edited.xlsx`, `original.xlsx`, `smart.xlsx`, `sugar.xlsx`, `test_table.xlsx`) to `tests/fixtures/`.
+- Implemented `fixture-path` helper in `tests/run.lisp` using `asdf:system-relative-pathname`.
+- Updated all test files and `README.md` to use the new fixture path location.
+**Files changed:**
+- `tests/run.lisp`: Added `fixture-path`.
+- `tests/workbook.lisp`, `test-lazy.lisp`, `README.md`: Updated paths.
+**Commands run / verification:**
+- `(asdf:test-system :cl-excel)`
+- `sbcl --non-interactive --load test-lazy.lisp`
+**Result:** PASS
+
+### 2026-01-14 — Bug Fix: Lazy Iterator Values (Milestone: M7)
+**Goal:** Fix issue where `make-sheet-iterator` dropped cell values.
+**Summary:**
+- Identified that `make-sheet-iterator` parsed `<v>` content but failed to assign it to `raw-val`.
+- Added missing assignment `(setf raw-val txt)` in `src/sheet-read.lisp`.
+- Updated `test-lazy.lisp` to capture and print full rows effectively.
+**Files changed:**
+- `src/sheet-read.lisp`: Fixed value assignment.
+- `test-lazy.lisp`: Added robust Quicklisp loading.
+**Verification:**
+- `sbcl --script test-lazy.lisp` now prints full rows (including numbers/booleans).
+**Result:** PASS
+
 
 ### 2026-01-13 — Task: M11 Intelligent DSL (Milestone: M11)
 **Goal:** Make the Sugar API "brain friendly" with intelligent range resolution.

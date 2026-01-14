@@ -164,7 +164,8 @@ Native support for reading and creating Excel Tables.
 #### Lazy Reading (Streaming)
 For large files, use iterators to keep memory usage low.
 ```lisp
-(let ((wb (cl-excel:read-xlsx #p"sugar.xlsx")))
+;; To access the included test files reliably:
+(let ((wb (cl-excel:read-xlsx (asdf:system-relative-pathname :cl-excel "tests/fixtures/sugar.xlsx"))))
   
   ;; Iterate over "Sheet1" or sheet index 1
   (cl-excel:with-sheet-iterator (next-row wb 1)  ;; 1 is sheet number 1-based

@@ -2,7 +2,8 @@
 
 (defpackage #:cl-excel.tests
   (:use #:cl #:fiveam)
-  (:export #:run-tests))
+  (:export #:run-tests
+           #:fixture-path))
 
 (in-package #:cl-excel.tests)
 
@@ -41,4 +42,9 @@
                       (run! :cl-excel/tables))))
     (declare (ignore results))
     t))
+
+(defun fixture-path (filename)
+  "Return the absolute path to a file in tests/fixtures/"
+  (asdf:system-relative-pathname :cl-excel 
+                                 (merge-pathnames filename "tests/fixtures/")))
 

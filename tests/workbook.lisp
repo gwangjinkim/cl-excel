@@ -7,7 +7,7 @@
 (in-suite :cl-excel/workbook)
 
 (defparameter *fixture-path* 
-  (asdf:system-relative-pathname :cl-excel "tests/fixtures/basic_types.xlsx"))
+  (fixture-path "basic_types.xlsx"))
 
 (test read-basic-fixture
   "Open basic_types.xlsx and check sheets."
