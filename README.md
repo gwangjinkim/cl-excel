@@ -164,11 +164,15 @@ Native support for reading and creating Excel Tables.
 #### Lazy Reading (Streaming)
 For large files, use iterators to keep memory usage low.
 ```lisp
-(cl-excel:with-sheet-iterator (iter "large.xlsx" 1)
-  (loop
-    (let ((row (funcall iter)))
-       (unless row (return))
-       (print row))))
+(let ((wb (cl-excel:read-xlsx #p"sugar.xlsx")))
+  
+  ;; Iterate over "Sheet1" or sheet index 1
+  (cl-excel:with-sheet-iterator (next-row wb 1)  ;; 1 is sheet number 1-based
+    (loop for row = (funcall next-row)
+          while row
+          do (format t "Processing Row: ~A~%" row)))
+          
+  (cl-excel:close-xlsx wb))
 ```
 
 ### API Reference
