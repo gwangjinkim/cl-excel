@@ -119,6 +119,14 @@
        (when (and ,var (not (eq ,mode :write)))
          (close-xlsx ,var)))))
 
+(defmacro with-xlsx-save ((var source &key (mode :read) (enable-cache t) 
+                                           (out-file nil)) 
+                          &body body)
+  "Like with-xlsx but also saves the workbook when done."
+  `(with-xlsx (,var ,source :mode ,mode :enable-cache ,enable-cache)
+     ,@body
+     (save-excel ,var ,(or out-file source))))
+
 ;;; Public API impl
 
 (defun sheet-names (workbook)
