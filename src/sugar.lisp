@@ -152,3 +152,17 @@
                  (push (nreverse row) res)))
              (nreverse res)))
           (t (error "Unable to resolve range"))))))) 
+
+;;; 7. Demo Utilities (sugar for examples)
+
+(defun example-path (filename)
+  "Return the full path to a file in tests/fixtures/.
+   Example: (example-path \"basic_types.xlsx\")"
+  (asdf:system-relative-pathname :cl-excel 
+                                 (merge-pathnames filename "tests/fixtures/")))
+
+(defun list-examples ()
+  "List available example files in tests/fixtures/."
+  (let ((path (asdf:system-relative-pathname :cl-excel "tests/fixtures/")))
+    (when (probe-file path)
+      (directory (merge-pathnames "*.xlsx" path)))))

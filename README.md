@@ -81,17 +81,29 @@ The "Sugar" API is designed to be concise and intuitive, similar to Python's pan
 Just want the data?
 
 ```lisp
+;; load asdf
+(require :asdf)
+
+;; load this package
+(ql:quickload :cl-excel)
+
+;; List available examples
+(cl-excel:list-examples)
+
+;; Get path to an example file
+(defparameter *xlsx* (cl-excel:example-path "basic_types.xlsx"))
+
 ;; Read the first sheet as a list of lists
-(cl-excel:read-file "data.xlsx") 
+(cl-excel:read-file *xlsx*) 
 ;; => (("Name" "Age") ("Alice" 30) ("Bob" 25))
 
 ;; Read a specific sheet and range
-(cl-excel:read-file "data.xlsx" "Sheet1" "A1:B10")
+(cl-excel:read-file *xlsx* "Sheet1" "A1:B10")
 
 ;; Smart Ranges (M11)
-(cl-excel:read-file "data.xlsx" 1 "A")  ;; Read Column A (auto-trimmed to data)
-(cl-excel:read-file "data.xlsx" 1 1)    ;; Read Column 1 (same as "A")
-(cl-excel:read-file "data.xlsx" 1 "A1") ;; Read Single Cell "A1"
+(cl-excel:read-file *xlsx* 1 "A")  ;; Read Column A (auto-trimmed to data)
+(cl-excel:read-file *xlsx* 1 1)    ;; Read Column 1 (same as "A")
+(cl-excel:read-file *xlsx* 1 "A1") ;; Read Single Cell "A1"
 ```
 
 ### 2. Concise Access

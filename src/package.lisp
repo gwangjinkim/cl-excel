@@ -27,5 +27,6 @@
    #:invalid-range-error #:read-only-error
    ;; Sugar (M10/M11)
    #:read-excel #:save-excel #:sheet-of #:val #:[] #:map-rows #:with-sheet #:read-file
-   #:list-sheets #:used-range))
+   #:list-sheets #:used-range
+   #:list-examples #:example-path))
 
