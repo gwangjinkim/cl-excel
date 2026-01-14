@@ -68,6 +68,8 @@ to your `~/.sbclrc` or if your are using Roswell, to your `~/.roswell/init.lisp`
   (error () nil))
 ```
 
+Or simply symlink your `other-folder/` into your `local-projects` folder.
+
 ---
 
 ## Quickstart (The Natural Way)
