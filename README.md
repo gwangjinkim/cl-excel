@@ -22,17 +22,16 @@ And I generated this library (cl-excel) using AI.
 (asdf:load-system :cl-excel)
 ```
 
-If you are using Quicklisp, do:
+If you are using Quicklisp, got clone into your `local-projects` folder:
 
 ```bash
 cd ~/quicklisp/local-projects/
-git clone git@github.c`om:gwangjinkim/cl-excel.git
+# if using roswell: `cd ~/.roswell/local-projects/`
+git clone git@github.com:gwangjinkim/cl-excel.git
 
 # start your lisp by:
 sbcl
-
-# or - if you use roswell:
-ros run
+# if using roswell: `ros run`
 ```
 
 And then in your lisp:
@@ -41,22 +40,33 @@ And then in your lisp:
 (ql:quickload :cl-excel)
 ```
 
-Alternatively, you can git clone this into another folder and symlink that project your local-projects:
+Alternatively, you can git clone into another folder and add the folder your `ql:*local-project-directories*`:
 
 ```bash
 cd ~/your/other-folder/
 git clone git@github.c`om:gwangjinkim/cl-excel.git 
 ```
 
-Make SBCL load the `other-folder` in addition to your Quicklisp `local-folder` by:
-```bash
-nano ~/.sbclrc
-```
-And enter there:
 ```lisp
-(push "~/your/other-folder/" ql:*local-project-directories*)
+(push #p"~/your/other-folder/" ql:*local-project-directories*)
+(ql:quickload :cl-excel)
 ```
-And save it. Now, Quicklisp will also see all the projects in the `other-folder`.
+
+You can make the adding of `other-folder` to your `ql:*local-project-directories*` permanent by adding the line
+to your `~/.sbclrc` or if your are using Roswell, to your `~/.roswell/init.lisp`:
+
+```
+;; ~/.roswell/init.lisp
+(handler-case
+    (progn
+      (require :asdf)
+      (when (find-package :ql)
+        (pushnew (merge-pathnames "your/other-folder/" (user-homedir-pathname)) ;; <= modify this folder path!
+                 ql:*local-project-directories*
+                 :test #'equal)
+        (ql:register-local-projects)))
+  (error () nil))
+```
 
 ---
 
