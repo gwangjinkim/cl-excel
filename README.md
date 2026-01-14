@@ -44,7 +44,7 @@ Alternatively, you can git clone into another folder and add the folder your `ql
 
 ```bash
 cd ~/your/other-folder/
-git clone git@github.c`om:gwangjinkim/cl-excel.git 
+git clone git@github.com:gwangjinkim/cl-excel.git 
 ```
 
 ```lisp
