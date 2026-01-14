@@ -1,6 +1,8 @@
 # cl-excel
 
-**cl-excel** is a Common Lisp library for reading and writing Microsoft Excel 2007+ (`.xlsx`) files. Ideally, it aims for feature parity with the Julia `XLSX.jl` package, providing a convenient and unified API for data analysis and reporting.
+**cl-excel** is a Common Lisp library for reading and writing Microsoft Excel `.xlsx` files. Ideally, it aims for feature parity with the Julia `XLSX.jl` package, providing a convenient and unified API for data analysis and reporting.
+
+Please give it a star if you support it and find it useful!
 
 | Feature | Status |
 | :--- | :--- |
