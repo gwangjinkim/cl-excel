@@ -6,7 +6,7 @@
 (asdf:defsystem #:cl-excel
   :description "Common Lisp XLSX reader/writer."
   :version "0.1.0"
-  :author "cl-excel contributors"
+  :author "Gwang-Jin Kim <gwang.jin.kim.phd@gmail.com>"
   :license "MIT"
   :depends-on (#:zip #:cxml #:cxml-stp #:local-time #:flexi-streams #:parse-number)
   :serial t
