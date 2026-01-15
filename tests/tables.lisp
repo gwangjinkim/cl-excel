@@ -22,7 +22,7 @@
   (let* ((stream (flexi-streams:make-in-memory-input-stream 
                   (flexi-streams:string-to-octets *sample-table-xml*)))
          (tbl (cl-excel::read-table-xml stream)))
-    (is tbl)
+    (is (not (null tbl)))
     (is (string= "Table1" (cl-excel:table-name tbl)))
     (is (string= "A1:C5" (cl-excel:table-ref tbl)))
     (is (= 3 (length (cl-excel:table-columns tbl))))

@@ -10,6 +10,29 @@ Entries are reverse-chronological (newest first).
 
 
 
+### 2026-01-15 — Task: Enhanced write-xlsx Arguments (Milestone: M12)
+**Goal:** Provide granular control over where data is written (sheet, cell, region).
+**Summary:**
+- Enhanced `write-xlsx` to support `:sheet` (name or index), `:start-cell`, `:region`, and `:region-only-p`.
+- Implemented data clipping logic when `:region-only-p` is true.
+- Enabled "best-effort" update mode when `:overwrite-p` is nil.
+- Standardized testing environment using `Makefile` and Roswell (`scripts/test.ros`).
+- Fixed invalid `workbook` initialization arguments.
+- Improved `close-xlsx` to safely handle workbooks without an associated ZIP file.
+- Updated existing tests for compatibility with system FiveAM (fixing `is` macro usage).
+- Removed `vendor/` directory in favor of system-installed FiveAM.
+**Files changed:**
+- `src/writer.lisp`: Logic for new arguments and clipping.
+- `src/workbook-read.lisp`: Moved `sheet` accessor, updated `close-xlsx`.
+- `cl-excel.asd`: Added new tests.
+- `Makefile`, `scripts/test.ros`, `scripts/repl.ros`: New testing infrastructure.
+- `tests/write-enhancements.lisp`: New comprehensive test suite.
+- `tests/run.lisp`, `tests/workbook.lisp`, `tests/tables.lisp`: Test fixes and integration.
+**Commands run / verification:**
+- `make test` (Executes all 119 checks across all suites).
+- `ros scripts/test.ros` (Direct execution of the test runner).
+**Result:** PASS
+
 
 ### 2026-01-14 — Refactor: Smart Ranges & Aliases (Milestone: M11)
 **Goal:** Align "Sugar" API with user intuition.

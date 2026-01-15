@@ -39,7 +39,8 @@
   (let ((results (and (run! :cl-excel/test-suite)
                       (run! :cl-excel/refs)
                       (run! :cl-excel/workbook)
-                      (run! :cl-excel/tables))))
+                      (run! :cl-excel/tables)
+                      (run! :cl-excel/write-enhancements))))
     (declare (ignore results))
     t))
 

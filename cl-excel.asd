@@ -43,6 +43,7 @@
     :components ((:file "run")
                  (:file "refs")
                  (:file "workbook")
-                 (:file "tables"))))
+                 (:file "tables")
+                 (:file "write-enhancements"))))
   :perform (test-op (op c)
              (uiop:symbol-call '#:cl-excel.tests '#:run-tests)))

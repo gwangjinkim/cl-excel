@@ -1,0 +1,19 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#|
+exec ros -Q --- $0 "$@"
+|#
+(progn ;;init forms
+  (ros:ensure-asdf)
+  #+quicklisp(ql:quickload '(:cl-excel :cl-excel/tests) :silent t))
+
+(defpackage :ros.script.repl.3693456789
+  (:use :cl))
+(in-package :ros.script.repl.3693456789)
+
+(defun main (&rest argv)
+  (declare (ignore argv))
+  ;; This script is intended to be loaded via `ros -Q run --load scripts/repl.ros`
+  ;; which will then drop the user into a REPL.
+  nil)
+;;; vim: set ft=lisp lisp:

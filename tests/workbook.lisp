@@ -14,7 +14,7 @@
   (is (probe-file *fixture-path*) "Fixture file must exist")
   
   (let ((wb (cl-excel:read-xlsx *fixture-path*)))
-    (is wb)
+    (is (not (null wb)))
     (is (= 1 (cl-excel:sheet-count wb)))
     (is (string= "Sheet1" (first (cl-excel:sheet-names wb))))
     (is (cl-excel:has-sheet-p wb "Sheet1"))
@@ -22,7 +22,7 @@
 
     ;; M3 Verification: Check values (Row 2 data)
     (let ((sh (cl-excel:sheet wb 1)))
-      (is sh)
+      (is (not (null sh)))
       ;; E1: Header "Date"
       (is (equal "Date" (cl-excel:get-data sh "E1")))
       ;; F1: Header "DateTime"

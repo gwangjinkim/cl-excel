@@ -6,19 +6,6 @@
 
 ;;; Workbook Access
 
-(defun sheet (workbook which)
-  "Get a sheet object by name (string) or index (integer, 1-based)."
-  (typecase which
-    (integer 
-     (if (and (>= which 1) (<= which (length (workbook-sheets workbook))))
-         (nth (1- which) (workbook-sheets workbook))
-         (error 'sheet-missing-error :name which)))
-    (string 
-     (or (find which (workbook-sheets workbook) 
-               :key #'sheet-name 
-               :test #'string=)
-         (error 'sheet-missing-error :name which)))
-    (t (error 'xlsx-error :message "Sheet selector must be string or integer."))))
 
 ;;; Cell Access
 

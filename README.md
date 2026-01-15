@@ -117,15 +117,25 @@ Just want the data?
 
 
 
-;; Smart Ranges (M11)
-(cl-excel:read-file *xlsx* 1 "B")  ;; Read Column A (auto-trimmed)
-(cl-excel:read-file *xlsx* 1 2)    ;; Read Row 2 (auto-trimmed)
-(cl-excel:read-file *xlsx* 1 "B2") ;; Read Single Cell "A1"
-(cl-excel:read-file *xlsx* 1 "A:C") ;; Read Column A to C (auto-trimmed in width)
-(cl-excel:read-file *xlsx* 1 "1:5") ;; Read Rows 1 to 5 (auto-trimmed in width)
+### 2. Precise and Targeted Writing
+
+The `write-xlsx` function now supports granular control over how and where data is written.
+
+```lisp
+;; 1. target a specific sheet (will be created if missing)
+(write-xlsx data "output.xlsx" :sheet "Report")
+
+;; 2. start writing at a specific cell
+(write-xlsx data "output.xlsx" :start-cell "B2")
+
+;; 3. Define a region and clip data to it
+(write-xlsx data "output.xlsx" :region "B2:C3" :region-only-p t)
+
+;; 4. Update an existing file (best-effort)
+(write-xlsx data "existing.xlsx" :sheet "Updates" :overwrite-p nil)
 ```
 
-### 2. Concise Access
+### 3. Concise Access
 
 ```lisp
 ;; List sheets without opening explicitly
@@ -229,6 +239,22 @@ This library is currently in **Beta** (M10 complete).
 - Formulas are not in my interest. The idea is rather Excel as input/output format
   for humans (Scientists etc. LOVE Excel as a document format).
 
+---
+
+## Testing
+
+Standardized testing is available via `ros` and `make`.
+
+Run all tests:
+```bash
+make test
+```
+
+Start a REPL with all dependencies and tests loaded:
+```bash
+make repl
+```
+
 ## License
 
-GPL-3.0 License.
+MIT License.
