@@ -44,6 +44,7 @@
                  (:file "refs")
                  (:file "workbook")
                  (:file "tables")
-                 (:file "write-enhancements"))))
+                 (:file "write-enhancements")
+                 (:file "tibble-support"))))
   :perform (test-op (op c)
              (uiop:symbol-call '#:cl-excel.tests '#:run-tests)))

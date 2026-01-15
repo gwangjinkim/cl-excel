@@ -2,6 +2,26 @@
 
 (in-package #:cl-excel)
 
+(defgeneric as-tabular (source)
+  (:documentation "Normalize SOURCE (e.g. list of lists, tibble) into a list of lists for writing to XLSX."))
+
+(defmethod as-tabular ((source list))
+  source)
+
+;; Fallback to check for cl-tibble objects without a hard dependency
+(defmethod as-tabular (source)
+  (let* ((package (find-package :cl-tibble))
+         (class (and package (find-class (find-symbol "TBL" package) nil))))
+    (if (and class (typep source class))
+        (let* ((names (coerce (funcall (find-symbol "TBL-NAMES" package) source) 'list))
+               (nrows (funcall (find-symbol "TBL-NROWS" package) source))
+               (get-col (find-symbol "TBL-COL" package))
+               (rows (loop for i from 0 below nrows
+                           collect (loop for name in names
+                                         collect (aref (funcall get-col source name) i)))))
+          (cons names rows))
+        (error "Unsupported source type: ~A. Consider implementing CL-EXCEL:AS-TABULAR." (type-of source)))))
+
 
 
 (defun write-entry-xml (zip name callback)
@@ -26,7 +46,7 @@
 
 (defun write-xlsx (source path &key sheet start-cell region region-only-p (overwrite-p t))
   "Write data to an XLSX file at PATH.
-   SOURCE can be a workbook object or tabular data (list of lists).
+   SOURCE can be a workbook object or tabular data (normalized via as-tabular).
    SHEET: name or 1-based index (default 1).
    START-CELL: e.g. \"A1\".
    REGION: e.g. \"A1:D10\".
@@ -38,50 +58,50 @@
               ;; Case 1: SOURCE is already a workbook
               ((typep source 'workbook) source)
               
-              ;; Case 2: SOURCE is tabular data
-              ((listp source)
-               (let ((existing-wb (when (and (not overwrite-p) (probe-file path))
-                                    (handler-case (read-xlsx path)
-                                      (error () nil)))))
-                 (let ((wb (or existing-wb (make-instance 'workbook :zip nil :sheets nil))))
-                   ;; Identify target sheet
-                   (let* ((target-sheet-id (or sheet 1))
-                          (sh (handler-case (sheet wb target-sheet-id)
-                                (sheet-missing-error ()
-                                  ;; Create new sheet if missing
-                                  (let ((new-sh (make-instance 'sheet 
-                                                               :name (if (stringp target-sheet-id) 
-                                                                         target-sheet-id 
-                                                                         (format nil "Sheet~D" target-sheet-id))
-                                                               :id (1+ (length (workbook-sheets wb))))))
-                                    (setf (workbook-sheets wb) (append (workbook-sheets wb) (list new-sh)))
-                                    new-sh)))))
-                     
-                     ;; Resolve writing window (start-r, start-c, end-r, end-c)
-                     (let ((start-r 1) (start-c 1) (end-r nil) (end-c nil))
-                       ;; Region takes precedence
-                       (if region
-                           (let ((r (parse-cell-ref region :range t)))
-                             (setf start-r (range-start-row r)
-                                   start-c (range-start-col r)
-                                   end-r (range-end-row r)
-                                   end-c (range-end-col r)))
-                           (when start-cell
-                             (let ((c (parse-cell-ref start-cell)))
-                               (setf start-r (cell-ref-row c)
-                                     start-c (cell-ref-col c)))))
+              ;; Case 2: SOURCE is tabular data (normalized)
+              (t
+               (let ((data (as-tabular source)))
+                 (let ((existing-wb (when (and (not overwrite-p) (probe-file path))
+                                      (handler-case (read-xlsx path)
+                                        (error () nil)))))
+                   (let ((wb (or existing-wb (make-instance 'workbook :zip nil :sheets nil))))
+                     ;; Identify target sheet
+                     (let* ((target-sheet-id (or sheet 1))
+                            (sh (handler-case (sheet wb target-sheet-id)
+                                  (sheet-missing-error ()
+                                    ;; Create new sheet if missing
+                                    (let ((new-sh (make-instance 'sheet 
+                                                                 :name (if (stringp target-sheet-id) 
+                                                                           target-sheet-id 
+                                                                           (format nil "Sheet~D" target-sheet-id))
+                                                                 :id (1+ (length (workbook-sheets wb))))))
+                                      (setf (workbook-sheets wb) (append (workbook-sheets wb) (list new-sh)))
+                                      new-sh)))))
                        
-                       ;; Write data
-                       (loop for row in source
-                             for r from start-r
-                             while (or (not region-only-p) (not end-r) (<= r end-r))
-                             do (loop for val in row
-                                      for c from start-c
-                                      while (or (not region-only-p) (not end-c) (<= c end-c))
-                                      do (setf (get-cell sh (cons r c))
-                                               (make-cell val)))))
-                     wb))))
-              (t (error "Unsupported source type: ~A" (type-of source))))))
+                       ;; Resolve writing window (start-r, start-c, end-r, end-c)
+                       (let ((start-r 1) (start-c 1) (end-r nil) (end-c nil))
+                         ;; Region takes precedence
+                         (if region
+                             (let ((r (parse-cell-ref region :range t)))
+                               (setf start-r (range-start-row r)
+                                     start-c (range-start-col r)
+                                     end-r (range-end-row r)
+                                     end-c (range-end-col r)))
+                             (when start-cell
+                               (let ((c (parse-cell-ref start-cell)))
+                                 (setf start-r (cell-ref-row c)
+                                       start-c (cell-ref-col c)))))
+                         
+                         ;; Write data
+                         (loop for row in data
+                               for r from start-r
+                               while (or (not region-only-p) (not end-r) (<= r end-r))
+                               do (loop for val in row
+                                        for c from start-c
+                                        while (or (not region-only-p) (not end-c) (<= c end-c))
+                                        do (setf (get-cell sh (cons r c))
+                                                 (make-cell val))))))
+                     wb)))))))
     
     ;; Final write to disk
     

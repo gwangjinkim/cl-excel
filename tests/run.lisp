@@ -40,7 +40,8 @@
                       (run! :cl-excel/refs)
                       (run! :cl-excel/workbook)
                       (run! :cl-excel/tables)
-                      (run! :cl-excel/write-enhancements))))
+                      (run! :cl-excel/write-enhancements)
+                      (run! :cl-excel/tibble))))
     (declare (ignore results))
     t))
 

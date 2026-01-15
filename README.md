@@ -133,6 +133,15 @@ The `write-xlsx` function now supports granular control over how and where data 
 
 ;; 4. Update an existing file (best-effort)
 (write-xlsx data "existing.xlsx" :sheet "Updates" :overwrite-p nil)
+
+;; 5. Support for cl-tibble (M12)
+;; If cl-tibble is loaded, you can write tibbles directly!
+(write-xlsx my-tibble "tibble_data.xlsx")
+
+;; 6. Extensibility Protocol (as-tabular)
+;; You can make any object writeable to Excel by implementing:
+;; (defmethod cl-excel:as-tabular ((source your-class))
+;;    (convert-to-list-of-lists source))
 ```
 
 ### 3. Concise Access
@@ -219,6 +228,8 @@ For large files, use iterators to keep memory usage low.
 
 - `read-file (path &optional sheet range)`: High-level reader.
 - `read-excel (path)` / `save-excel (wb path)`: File I/O aliases.
+- `write-xlsx (source path &key ...)`: Unified writer supporting lists and tibbles.
+- `as-tabular (source)`: Protocol for adding custom tabular types.
 - `val (sheet ref)` / `[] (sheet ref)` / `cell (sheet ref)`: Cell accessors.
 - `map-rows (fn sheet)`: Functional iteration.
 - `wb`, `sheet`, `cell`: Low-level constructors if needed.

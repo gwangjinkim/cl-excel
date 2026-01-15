@@ -10,6 +10,23 @@ Entries are reverse-chronological (newest first).
 
 
 
+### 2026-01-15 — Task: cl-tibble Support & as-tabular Protocol (Milestone: M12/misc)
+**Goal:** Enable seamless writing of tibbles and provide a general extensibility protocol.
+**Summary:**
+- Implemented `as-tabular` generic function as a normalization protocol for `write-xlsx`.
+- Added `cl-tibble:tbl` support: tibbles are now automatically converted to list-of-lists (headers + data) when passed to `write-xlsx`.
+- Added `as-tabular` identity method for `list`.
+- Exported `as-tabular` from the `cl-excel` package.
+- Added `tests/tibble-support.lisp` and integrated it into the test suite.
+**Files changed:**
+- `src/package.lisp`: Exported `as-tabular`.
+- `src/writer.lisp`: Implemented protocol and updated `write-xlsx`.
+- `cl-excel.asd`, `tests/run.lisp`: Integrated new tests.
+- `tests/tibble-support.lisp`: New integration tests.
+**Commands run / verification:**
+- `make test` (Verified `cl-tibble` integration with a dedicated 6-check suite).
+**Result:** PASS
+
 ### 2026-01-15 — Task: Enhanced write-xlsx Arguments (Milestone: M12)
 **Goal:** Provide granular control over where data is written (sheet, cell, region).
 **Summary:**

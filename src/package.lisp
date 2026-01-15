@@ -4,6 +4,8 @@
   (:use #:cl)
   (:nicknames #:excel)
   (:export
+   ;; Protocol
+   #:as-tabular
    ;; Open/close
    #:read-xlsx #:open-xlsx #:close-xlsx #:with-xlsx #:write-xlsx
    ;; Workbook/sheets
