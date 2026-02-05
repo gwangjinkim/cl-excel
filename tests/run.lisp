@@ -36,15 +36,14 @@
 
 (defun run-tests ()
   "Entry point for ASDF test-op. Returns T when the suite is invoked."
-  (let ((results (and (run! :cl-excel/test-suite)
-                      (run! :cl-excel/refs)
-                      (run! :cl-excel/workbook)
-                      (run! :cl-excel/tables)
-                      (run! :cl-excel/write-enhancements)
-                      (run! :cl-excel/tibble)
-                      (run! :cl-excel/compat))))
-    (declare (ignore results))
-    t))
+  (run! :cl-excel/test-suite)
+  (run! :cl-excel/refs)
+  (run! :cl-excel/workbook)
+  (run! :cl-excel/tables)
+  (run! :cl-excel/write-enhancements)
+  (run! :cl-excel/tibble)
+  (run! :cl-excel/compat)
+  t)
 
 (defun fixture-path (filename)
   "Return the absolute path to a file in tests/fixtures/"

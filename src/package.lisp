@@ -8,6 +8,7 @@
    #:as-tabular
    ;; Open/close
    #:read-xlsx #:open-xlsx #:close-xlsx #:with-xlsx #:write-xlsx
+   #:read-ods #:write-ods #:detect-file-format #:write-file ; New exports
    ;; Workbook/sheets
    #:sheet-names #:sheet-count #:has-sheet-p #:sheet #:add-sheet! #:rename-sheet! #:sheet-name #:sheet-cells
    #:workbook-app-name ;; M13 exports

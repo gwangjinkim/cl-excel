@@ -8,7 +8,7 @@
   :version "0.1.0"
   :author "Gwang-Jin Kim <gwang.jin.kim.phd@gmail.com>"
   :license "MIT"
-  :depends-on (#:zip #:cxml #:cxml-stp #:local-time #:flexi-streams #:parse-number)
+  :depends-on (#:zip #:cxml #:cxml-stp #:local-time #:flexi-streams #:parse-number #:alexandria)
   :serial t
   :in-order-to ((test-op (test-op "cl-excel/tests")))
   :components
@@ -23,6 +23,8 @@
      (:file "rels")
      (:file "styles")
      (:file "sheet-read")
+     (:file "ods-read")
+     (:file "ods-write")
      (:file "table-read")
      (:file "table-write")
      (:file "workbook-read")
@@ -46,6 +48,7 @@
                  (:file "tables")
                  (:file "write-enhancements")
                  (:file "tibble-support")
-                 (:file "compat"))))
+                 (:file "compat")
+                 (:file "ods"))))
   :perform (test-op (op c)
              (uiop:symbol-call '#:cl-excel.tests '#:run-tests)))

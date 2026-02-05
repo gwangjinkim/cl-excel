@@ -3,8 +3,7 @@
 (in-package #:cl-excel.tests)
 
 (def-suite :cl-excel/compat
-  :description "Compatibility and bug fix tests (M12+)"
-  :in :cl-excel/test-suite)
+  :description "Compatibility and bug fix tests (M12+)")
 
 (in-suite :cl-excel/compat)
 

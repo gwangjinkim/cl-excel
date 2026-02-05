@@ -11,6 +11,29 @@
   (declare (ignore overwrite)) ;; write-xlsx generally overwrites in our impl
   (write-xlsx workbook path))
 
+(defun write-file (source target &key (overwrite t))
+  "Write SOURCE (Workbook or Alist) to TARGET path. 
+   Auto-detects format (.ods vs .xlsx).
+   SOURCE: 
+     - Workbook object
+     - Alist of ((\"Sheet1\" . rows) ...)"
+  (let* ((target-str (uiop:native-namestring target))
+         (format (or (detect-file-format target)
+                     (if (or (uiop:string-suffix-p target-str ".ods")
+                             (uiop:string-suffix-p target-str ".ODS"))
+                         :ods
+                         :xlsx))))
+    (if (eq format :ods)
+        (let ((data (if (typep source 'workbook)
+                        (mapcar (lambda (sh)
+                                  (cons (sheet-name sh)
+                                        (map-rows #'identity sh)))
+                                (workbook-sheets source))
+                        source)))
+          ;; ODS write doesn't check overwrite flag yet, relies on zip lib
+          (write-ods data target))
+        (save-excel source target :overwrite overwrite))))
+
 (defun sheet-of (workbook index-or-name)
   "Alias for SHEET."
   (sheet workbook index-or-name))
@@ -178,7 +201,7 @@
      - 1 - row 1 (trimmed)
      - '1:3' - rows 1 to 3 (trimmed)
      - 'A1' - single cell"
-  (with-xlsx (wb path :timezone timezone))
+  (with-xlsx (wb path :timezone timezone)
     (let ((sh (sheet wb sheet-id)))
       (let ((resolved (resolve-smart-range sh range)))
         (cond
@@ -204,7 +227,7 @@
                            (push (if cell (cell-value cell) +missing+) row)))
                        (push (nreverse row) res))))
              (nreverse res)))
-          (t (error "Unable to resolve range"))))))) 
+          (t (error "Unable to resolve range")))))))) 
 
 (defun get-hash-cell (sheet r c)
   (gethash (cons r c) (sheet-cells sheet))) 
