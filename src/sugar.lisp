@@ -229,6 +229,54 @@
              (nreverse res)))
           (t (error "Unable to resolve range")))))))) 
 
+(defun excel-to-lol (path &optional (sheet-id 1) (range :all) &key keep-empty-rows (timezone local-time:+utc-zone+))
+  "Read an Excel/ODS file and return it as a list of lists (rows)."
+  (read-file path sheet-id range :keep-empty-rows keep-empty-rows :timezone timezone))
+
+(defun excel-to-alist (path &optional (sheet-id 1) (range :all) &key (timezone local-time:+utc-zone+))
+  "Read an Excel/ODS file and return it as a list of association lists.
+   The first row is used as keys (converted to strings)."
+  (let ((data (read-file path sheet-id range :timezone timezone)))
+    (when data
+      (let ((headers (mapcar (lambda (h) (format nil "~A" h)) (first data)))
+            (rows (rest data)))
+        (mapcar (lambda (row)
+                  (loop for h in headers
+                        for v in row
+                        collect (cons h v)))
+                rows)))))
+
+(defun excel-to-plist (path &optional (sheet-id 1) (range :all) &key (timezone local-time:+utc-zone+))
+  "Read an Excel/ODS file and return it as a list of property lists.
+   The first row is used as keys (converted to keywords)."
+  (let ((data (read-file path sheet-id range :timezone timezone)))
+    (when data
+      (let ((headers (mapcar (lambda (h) (alexandria:make-keyword (string-upcase (format nil "~A" h))))
+                             (first data)))
+            (rows (rest data)))
+        (mapcar (lambda (row)
+                  (let ((plist '()))
+                    (loop for h in headers
+                          for v in row
+                          do (setf (getf plist h) v))
+                    plist))
+                rows)))))
+
+(defun excel-to-tibble (path &optional (sheet-id 1) (range :all) &key (timezone local-time:+utc-zone+))
+  "Read an Excel/ODS file and return it as a cl-tibble:tbl.
+   The first row is used as column names.
+   Requires the cl-tibble package to be loaded."
+  (let ((data (read-file path sheet-id range :timezone timezone)))
+    (when data
+      (if (find-package :cl-tibble)
+          (let* ((headers (mapcar (lambda (h) (format nil "~A" h)) (first data)))
+                 (rows (rest data))
+                 (tibble-fn (find-symbol "TIBBLE-FROM-ROWS" :cl-tibble)))
+            (if tibble-fn
+                (funcall tibble-fn rows :columns headers)
+                (error "cl-tibble:tibble-from-rows not found. Please ensure cl-tibble is up to date.")))
+          (error "cl-tibble package not found. Please load :cl-tibble first.")))))
+
 (defun get-hash-cell (sheet r c)
   (gethash (cons r c) (sheet-cells sheet))) 
 

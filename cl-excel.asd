@@ -48,6 +48,7 @@
                  (:file "tables")
                  (:file "write-enhancements")
                  (:file "tibble-support")
+                 (:file "conversion")
                  (:file "compat")
                  (:file "ods"))))
   :perform (test-op (op c)

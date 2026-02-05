@@ -42,7 +42,9 @@
   (run! :cl-excel/tables)
   (run! :cl-excel/write-enhancements)
   (run! :cl-excel/tibble)
+  (run! :cl-excel/conversion)
   (run! :cl-excel/compat)
+  (run! :cl-excel/ods)
   t)
 
 (defun fixture-path (filename)
