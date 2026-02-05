@@ -32,7 +32,10 @@
    ;; Sugar (M10/M11)
    #:read-excel #:save-excel #:sheet-of #:val #:[] #:c 
    #:map-rows #:with-sheet #:read-file
-   #:excel-to-lol #:excel-to-alist #:excel-to-plist #:excel-to-tibble
+   #:excel-to-lol #:excel-to-alist #:excel-to-plist 
+   ;; #:excel-to-tibble 
+   ;; not exported because cl-dplyr or cl-tidyr 
+   ;; should export it
    #:list-sheets #:used-range #:with-xlsx-save
    #:list-examples #:example-path))
 
