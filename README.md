@@ -1,270 +1,205 @@
 # cl-excel
 
-**cl-excel** is a Common Lisp library for reading and writing Microsoft Excel `.xlsx` files. Ideally, it aims for feature parity with the Julia `XLSX.jl` package, providing a convenient and unified API for data analysis and reporting.
+**cl-excel** is a modern and powerful Common Lisp library for reading and writing Microsoft Excel `.xlsx` and LibreOffice `.ods` files. 
 
-Please give it a star if you support it and find it useful!
+It provides a unified "Sugar" API inspired by Julia's `XLSX.jl` and Python's `openpyxl`, allowing developers to handle complex spreadsheets with minimal code while maintaining memory efficiency for large datasets.
 
-| Feature | Status |
-| :--- | :--- |
-| **Reading** | ✅ Supported (Eager & Lazy) |
-| **Writing** | ✅ Supported (New & Edit Mode) |
-| **Tables** | ✅ Read & Write |
-| **Streaming** | ✅ Memory-efficient Iterators |
-| **Styles** | ⚠️ Basic (Dates/Formats only) |
+## Why cl-excel?
 
-Another library for excel files which I generated in the past is: https://github.com/a1b10/cl-xlsx
-But this library now can not only read but also write to excel files.
-And I generated this library (cl-excel) using AI.
-
-## Installation
-
-**cl-excel** is available via ASDF/Quicklisp (local).
-
-```lisp
-(asdf:load-system :cl-excel)
-```
-
-If you are using Quicklisp, got clone into your `local-projects` folder:
-
-```bash
-cd ~/quicklisp/local-projects/
-# if using roswell: `cd ~/.roswell/local-projects/`
-git clone git@github.com:gwangjinkim/cl-excel.git
-
-# start your lisp by:
-sbcl
-# if using roswell: `ros run`
-```
-
-And then in your lisp:
-
-```lisp
-(ql:quickload :cl-excel)
-```
-
-Alternatively, you can git clone into another folder and add the folder your `ql:*local-project-directories*`:
-
-```bash
-cd ~/your/other-folder/
-git clone git@github.com:gwangjinkim/cl-excel.git 
-```
-
-```lisp
-(push #p"~/your/other-folder/" ql:*local-project-directories*)
-(ql:quickload :cl-excel)
-```
-
-You can make the adding of `other-folder` to your `ql:*local-project-directories*` permanent by adding the line
-to your `~/.sbclrc` or if your are using Roswell, to your `~/.roswell/init.lisp`:
-
-```
-;; ~/.roswell/init.lisp
-(handler-case
-    (progn
-      (require :asdf)
-      (when (find-package :ql)
-        (pushnew (merge-pathnames "your/other-folder/" (user-homedir-pathname)) ;; <= modify this folder path!
-                 ql:*local-project-directories*
-                 :test #'equal)
-        (ql:register-local-projects)))
-  (error () nil))
-```
-
-Or simply symlink your `other-folder/` into your `local-projects` folder.
+- **Successor to cl-xlsx**: This library is a significant extension of `gwangjinkim/cl-xlsx` (formerly `a1b10/cl-xlsx`). While the original was primarily a **read-only** tool, **cl-excel** adds full **writing** support from scratch.
+- **Unified API**: One function to read them all (`read-file`), one to write them all (`write-file`).
+- **Robust Format Detection**: It ignores file extensions and inspects internal ZIP markers to decide if a file is XLSX or ODS.
+- **Rich Text Support**: Correctly parses cells with mixed formatting (bold, italic, colors) without data loss.
+- **Memory Efficiency**: Supports both eager (DOM) and lazy (Streaming) reading.
+- **Table Support**: Native support for Excel Tables (`ListObject`), allowing you to treat ranges as named entities.
+- **Metadata Aware**: Detects the creating application and other document metadata.
 
 ---
 
-## Quickstart (The Natural Way)
+## Mental Model
 
-The "Sugar" API is designed to be concise and intuitive, similar to Python's pandas or openpyxl.
+To work effectively with `cl-excel`, it is helpful to understand the underlying structure:
 
-### 0. Do This First
+1.  **Workbook**: The entire file (an archive). It contains global data like shared strings, styles, and a list of sheets.
+2.  **Sheet**: A single worksheet within the workbook. It can be accessed by its name (string) or a 1-based index (integer).
+3.  **Cell**: The fundamental unit of data. Cells are accessed via coordinates (e.g., "A1") or row/column numbers.
+    - **Missing Data**: Empty cells are represented by the special `+missing+` constant. Use `(missing-p val)` to check for it.
+
+---
+
+## Installation
+
+**cl-excel** is best installed via Quicklisp's `local-projects`:
+
+```bash
+cd ~/quicklisp/local-projects/
+git clone https://github.com/gwangjinkim/cl-excel.git
+```
+
+Then in your Common Lisp environment:
 
 ```lisp
 (ql:quickload :cl-excel)
-
-(use-package :cl-excel)   ;; to get rid of `cl-excel:`
-
-
-;; List available example Excel files in this package
-(list-examples)
-
-;; Get full absolute path from an example file
-(example-path "test_table.xlsx")
-
-;; Define an example path
-(defparameter *xlsx* (cl-excel:example-path "test_table.xlsx"))
-
-;; List all sheet names of an Excel file
-(list-sheets *xlsx*) ;; => ("Sheet1")
-
 ```
 
-### 1. One-Liner Read
+**Dependencies:**
+- `cxml` / `cxml-stp` (XML parsing)
+- `zip` (Archive handling)
+- `local-time` (Date/Time handling)
+- `alexandria` / `uiop` (Utilities)
 
-Just want the data?
+---
+
+## Quickstart
+
+### 0. Setup
+```lisp
+(use-package :cl-excel)
+
+;; Get an absolute path to an included example
+(defparameter *xlsx* (example-path "test_table.xlsx"))
+
+;; List sheet names
+(list-sheets *xlsx*) ;; => ("Sheet1")
+```
+
+### 1. One-Liner Reading
+If you just want the data as a list of lists:
 
 ```lisp
-;; Read the first sheet as a list of lists
+;; Read the first sheet
 (read-file *xlsx*) 
 ;; => (("Name" "Age") ("Alice" 30) ("Bob" 25))
 
 ;; Read a specific sheet and range
-(read-file *xlsx* "Sheet1" "A1:B10") ;; Not auto-trimmed! Empty cells are `#<MISSING>`
-
-;; You can use index number (1-based) instead of the sheet name
-(read-file *xlsx* 1 "A1:B10")
-
-
-
-### 2. Precise and Targeted Writing
-
-The `write-xlsx` function now supports granular control over how and where data is written.
-
-```lisp
-;; 1. target a specific sheet (will be created if missing)
-(write-xlsx data "output.xlsx" :sheet "Report")
-
-;; 2. start writing at a specific cell
-(write-xlsx data "output.xlsx" :start-cell "B2")
-
-;; 3. Define a region and clip data to it
-(write-xlsx data "output.xlsx" :region "B2:C3" :region-only-p t)
-
-;; 4. Update an existing file (best-effort)
-(write-xlsx data "existing.xlsx" :sheet "Updates" :overwrite-p nil)
-
-;; 5. Support for cl-tibble (M12)
-;; If cl-tibble is loaded, you can write tibbles directly!
-(write-xlsx my-tibble "tibble_data.xlsx")
-
-;; 6. Extensibility Protocol (as-tabular)
-;; You can make any object writeable to Excel by implementing:
-;; (defmethod cl-excel:as-tabular ((source your-class))
-;;    (convert-to-list-of-lists source))
+(read-file *xlsx* "Sheet1" "A1:B2")
 ```
 
-### 3. Concise Access
-
+### 2. Simple Writing
 ```lisp
-;; List sheets without opening explicitly
-(print (cl-excel:list-sheets *xlsx*))
-
-(with-xlsx (wb *xlsx* :mode :rw)
-  (with-sheet (s wb 1)
-    
-    ;; Get Value using `[]` or `val` or `c`
-    (print (c s "A1")) 
-    
-    ;; Set Value `[]` or `val` or `c`
-    (setf (c s "B1") "Updated")
-    
-    ;; Iterate rows
-    (map-rows (lambda (row) (print row)) s)
-    
-    ;; Save changes
-    (save-excel wb "saved.xlsx")))
+(let ((data '(("Item" "Count") ("Lisp" 100) ("Excel" 5))))
+  (write-file data "output.xlsx")) ;; Auto-detects format from extension
 ```
 
 ---
 
-## Julia `XLSX.jl` Style
+## Features in Detail
 
-If you are coming from Julia, here is how `cl-excel` compares.
-
-| Operation | Julia (`XLSX.jl`) | Common Lisp (`cl-excel`) |
-| :--- | :--- | :--- |
-| **Open File** | `xf = XLSX.readxlsx("f.xlsx")` | `(defparameter *xf* (cl-excel:read-excel "f.xlsx"))` |
-| **Get Sheet** | `sh = xf["Sheet1"]` | `(defparameter *sh* (cl-excel:sheet-of *xf* "Sheet1"))` |
-| **Get Cell** | `val = sh["A1"]` | `(cl-excel:[] *sh* "A1")` |
-| **Set Cell** | `sh["A1"] = "foo"` | `(setf (cl-excel:[] *sh* "A1") "foo")` |
-| **Write Table** | `XLSX.writetable("f.xlsx", data)` | `(cl-excel:add-table! *sh* data)` (then save) |
-
-**Example Port:**
+### Robust Format Detection
+`cl-excel` does not rely on file extensions. Even if an ODS file is named `data.xlsx`, it will be identified correctly by its internal markers.
 
 ```lisp
-(let ((wb (cl-excel:read-excel *xlsx*)))
-  (let ((sh (cl-excel:sheet-of wb "Sheet1")))
-     (format t "Cell A1 is: ~A~%" (cl-excel:cell sh "A1"))))
+(detect-file-format "renamed_ods.xlsx") ;; => :ods
 ```
 
----
+### Granular Writing with write-xlsx
+The `write-xlsx` (and `write-ods`) functions provide fine-grained control:
 
-## Detailed Documentation
+- **:sheet**: Target a specific sheet name.
+- **:start-cell**: Specify where the top-left corner of your data should be placed (e.g., "B2").
+- **:region**: Define a bounding box (e.g., "A1:C10").
+- **:region-only-p**: If T, data will be clipped to fit exactly within the specified region.
 
-### Core Concepts
-
-- **Workbook**: The main container (`cl-excel:workbook`).
-- **Sheet**: A single worksheet (`cl-excel:sheet`).
-- **Cell**: The fundamental unit. Empty cells are `+missing+`.
-
-### Advanced Features
-
-#### Edit Mode
-Open files with `:mode :rw` to modify them.
-> [!WARNING]
-> This is a **best-effort** regeneration. Charts and images may be lost.
-
-#### Excel Tables (`ListObject`)
-Native support for reading and creating Excel Tables.
 ```lisp
-(cl-excel:add-table! sheet my-data :name "SalesTable")
+(write-xlsx my-data "report.xlsx" :sheet "Sales" :start-cell "B2")
 ```
 
-#### Lazy Reading (Streaming)
-For large files, use iterators to keep memory usage low.
+### Edit Mode (:rw)
+You can open an existing file, modify it, and save it. 
+Note: While functional, this is a best-effort regeneration. Complex charts or macros may not be preserved.
+
 ```lisp
-;; To access the included test files reliably:
-(cl-excel:with-xlsx (wb (cl-excel:example-path "sugar.xlsx"))
-  
-  ;; Iterate over "Sheet1" or sheet index 1
-  (cl-excel:with-sheet-iterator (next-row wb 1)  ;; 1 is sheet number 1-based
+(with-xlsx (wb "data.xlsx" :mode :rw)
+  (let ((sh (sheet wb 1)))
+    (setf (c sh "A1") "New Value")
+    (save-excel wb "modified.xlsx")))
+```
+
+### Excel Tables (ListObjects)
+Tables are named ranges in Excel that can grow and shrink. `cl-excel` can read them directly.
+
+```lisp
+(with-xlsx (wb *xlsx*)
+  (let ((sh (sheet wb 1)))      ;; index is 1-based
+    (read-table sh "MyTable"))) ;; Returns list of lists excluding headers
+```
+
+### Streaming Iteration (Lazy Loading)
+For very large files (e.g., millions of rows), avoid loading everything into memory.
+
+```lisp
+(with-xlsx (wb "massive_data.xlsx")
+  (with-sheet-iterator (next-row wb "HugeSheet")
     (loop for row = (funcall next-row)
           while row
-          do (format t "Processing Row: ~A~%" row))))
+          do (process-row row))))
 ```
 
-### API Reference
+### Extension Protocol: as-tabular
+You can make any custom object compatible with `write-file` by implementing the `as-tabular` method. This is how `cl-tibble` integration works.
 
-- `read-file (path &optional sheet range)`: High-level reader.
-- `read-excel (path)` / `save-excel (wb path)`: File I/O aliases.
-- `write-xlsx (source path &key ...)`: Unified writer supporting lists and tibbles.
-- `as-tabular (source)`: Protocol for adding custom tabular types.
-- `val (sheet ref)` / `[] (sheet ref)` / `cell (sheet ref)`: Cell accessors.
-- `map-rows (fn sheet)`: Functional iteration.
-- `wb`, `sheet`, `cell`: Low-level constructors if needed.
+```lisp
+(defmethod as-tabular ((obj my-custom-type))
+  ;; return a list of lists
+  ...)
+```
 
 ---
 
-## Status & Roadmap
+## API Reference
 
-This library is currently in **Beta** (M10 complete).
+### File Operations
+- `read-file (path &optional sheet range)`: High-level reader.
+- `write-file (source path)`: High-level writer.
+- `read-xlsx (path)` / `save-excel (wb path)`: Lower-level workbook operations.
+- `read-ods (path)` / `write-ods (data path)`: ODS-specific operations.
 
-- [x] **M0-M8**: Core Reading/Writing/Tables
-- [x] **M9**: Edit Mode (:rw)
-- [x] **M10**: Sugar API (User Friendliness)
+### Workbook & Sheet Access
+- `sheet (workbook designator)`: Get sheet by name or 1-based index.
+- `list-sheets (path or workbook)`: Return list of sheet names.
+- `sheet-names (workbook)`: Return list of names in an open workbook.
 
-**Future Plans:**
-- Better style preservation in Edit Mode.
-- Charts and Drawings support.
-- Formulas are not in my interest. The idea is rather Excel as input/output format
-  for humans (Scientists etc. LOVE Excel as a document format).
+### Cell Access (Sugar)
+All of the following can be used with `setf` in `:rw` mode:
+- `c (sheet ref)`: General cell value accessor (ref can be "A1").
+- `val (sheet ref)`: Alias for `c`.
+- `[] (sheet ref)`: Alias for `c`.
+- `get-data (sheet ref)`: The underlying protocol function.
+
+### Iterators
+- `map-rows (fn sheet)`: Apply `fn` to every row.
+- `do-rows ((row-var sheet) &body)`: Logical iteration over rows.
+- `each-table-row (fn table)`: Apply `fn` to table data.
+
+---
+
+## Support & Parity
+
+`cl-excel` aims for high reliability, but it is currently in **Beta**. We strive for feature parity with Julia's `XLSX.jl` where it makes sense for the Common Lisp ecosystem.
+
+| Feature | Status |
+| :--- | :--- |
+| **XLSX Reading** | ✅ Supported |
+| **XLSX Writing** | ✅ Supported |
+| **ODS Reading** | ✅ Supported |
+| **ODS Writing** | ✅ Supported |
+| **Tables** | ✅ Supported |
+| **Rich Text** | ✅ Supported |
+| **Streaming** | ✅ Supported |
+| **Styles** | ⚠️ Basic (Formats only) |
+| **Formulas** | ❌ Not supported (Read as values) |
 
 ---
 
 ## Testing
 
-Standardized testing is available via `ros` and `make`.
+Run the test suite via the provided `Makefile`:
 
-Run all tests:
 ```bash
 make test
 ```
 
-Start a REPL with all dependencies and tests loaded:
-```bash
-make repl
-```
+Standard tests include over 150 checks covering roundtrips, edge cases, and cross-format detection.
 
 ## License
 
