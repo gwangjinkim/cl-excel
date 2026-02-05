@@ -4,15 +4,39 @@
 
 (defclass workbook ()
   ((zip :initarg :zip :accessor workbook-zip)
-   (sheets :initarg :sheets :accessor workbook-sheets) ;; list of sheet structs
+   (sheets :initarg :sheets :accessor workbook-sheets)
    (shared-strings :initarg :shared-strings :accessor workbook-shared-strings)
    (styles :initarg :styles :accessor workbook-styles)
-   (tables :initarg :tables :accessor workbook-tables :initform nil)))
+   (tables :initarg :tables :accessor workbook-tables :initform nil)
+   (app-name :initarg :app-name :accessor workbook-app-name :initform nil)))
 
 (defstruct sheet-meta
   name
   id
   rel-id)
+
+(defun get-node-text (node)
+  "Get text content of a node."
+  (let ((text ""))
+    (stp:do-children (child node)
+      (when (typep child 'stp:text)
+        (setf text (concatenate 'string text (stp:data child)))))
+    text))
+
+(defun read-app-name (zip)
+  "Attempt to detect application name from docProps/app.xml or meta.xml."
+  (let ((app-xml (get-entry-stream zip "docProps/app.xml"))
+        (meta-xml (get-entry-stream zip "meta.xml")))
+    (cond
+      (app-xml 
+       (let* ((dom (parse-xml app-xml))
+              (app-node (find-child (stp:document-element dom) "Application")))
+         (if app-node (get-node-text app-node) "")))
+      (meta-xml
+       (let* ((dom (parse-xml meta-xml))
+              (gen-node (find-child (stp:document-element dom) "generator")))
+         (if gen-node (get-node-text gen-node) "")))
+      (t nil))))
 
 (defun read-shared-strings (zip)
   "Read xl/sharedStrings.xml and return a vector of strings."
@@ -28,10 +52,12 @@
           (coerce (nreverse items) 'vector))
         #()))) ;; Return empty vector if no shared strings
 
-(defun read-xlsx (source)
+(defun read-xlsx (source &key (timezone local-time:+utc-zone+))
   "Open and read an Excel workbook from SOURCE (path)."
   (let* ((zip (open-zip source))
          (wb (make-instance 'workbook :zip zip)))
+    
+    (setf (workbook-app-name wb) (read-app-name zip))
     
     ;; 1. Parse workbook.xml for sheets
     (let ((wb-stream (get-entry-stream zip "xl/workbook.xml")))
@@ -59,7 +85,7 @@
           ;; 4. Load actual sheets
           (setf (workbook-sheets wb)
                 (mapcar (lambda (meta)
-                          (let ((sh (read-sheet zip meta (workbook-shared-strings wb) (workbook-styles wb)))
+                          (let ((sh (read-sheet zip meta (workbook-shared-strings wb) (workbook-styles wb) timezone))
                                 (rels-path (format nil "xl/worksheets/_rels/sheet~A.xml.rels" (sheet-meta-id meta))))
                             
                             ;; M5: Load Table Relationships
@@ -100,32 +126,33 @@
     (when zip
       (close-zip zip))))
 
-(defun open-xlsx (source &key (mode :read) (enable-cache t))
+(defun open-xlsx (source &key (mode :read) (enable-cache t) (timezone local-time:+utc-zone+))
   "Open XLSX file at SOURCE.
    MODE: :read (default), :write (new file), :rw (edit existing).
    ENABLE-CACHE: Ignored for now (always true for DOM read)."
   (declare (ignore enable-cache))
   (case mode
-    (:read (read-xlsx source))
+    (:read (read-xlsx source :timezone timezone))
     (:write (make-instance 'workbook :zip nil :sheets nil))
     (:rw 
      (warn "Opening XLSX in EDIT mode (:rw). This is a best-effort implementation. 
             Charts, drawings, and complex styles may be lost upon saving.")
-     (read-xlsx source))
+     (read-xlsx source :timezone timezone))
     (t (error "Unknown mode: ~A" mode))))
 
-(defmacro with-xlsx ((var source &key (mode :read) (enable-cache t)) &body body)
-  `(let ((,var (open-xlsx ,source :mode ,mode :enable-cache ,enable-cache)))
+(defmacro with-xlsx ((var source &key (mode :read) (enable-cache t) (timezone 'local-time:+utc-zone+)) &body body)
+  `(let ((,var (open-xlsx ,source :mode ,mode :enable-cache ,enable-cache :timezone ,timezone)))
      (unwind-protect
           (progn ,@body)
        (when (and ,var (not (eq ,mode :write)))
          (close-xlsx ,var)))))
 
 (defmacro with-xlsx-save ((var source &key (mode :read) (enable-cache t) 
-                                           (out-file nil)) 
+                                           (out-file nil)
+                                           (timezone 'local-time:+utc-zone+)) 
                           &body body)
   "Like with-xlsx but also saves the workbook when done."
-  `(with-xlsx (,var ,source :mode ,mode :enable-cache ,enable-cache)
+  `(with-xlsx (,var ,source :mode ,mode :enable-cache ,enable-cache :timezone ,timezone)
      ,@body
      (save-excel ,var ,(or out-file source))))
 

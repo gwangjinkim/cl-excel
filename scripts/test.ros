@@ -5,7 +5,10 @@ exec ros -Q --- $0 "$@"
 |#
 (progn ;;init forms
   (ros:ensure-asdf)
-  #+quicklisp(ql:quickload '(:cl-excel :cl-excel/tests) :silent t))
+  #+quicklisp
+  (progn
+    (ignore-errors (ql:quickload :cl-tibble :silent t))
+    (ql:quickload '(:cl-excel :cl-excel/tests) :silent t)))
 
 (defpackage :ros.script.test.3693456789
   (:use :cl))
@@ -18,7 +21,9 @@ exec ros -Q --- $0 "$@"
                              (fiveam:run :cl-excel/refs)
                              (fiveam:run :cl-excel/workbook)
                              (fiveam:run :cl-excel/tables)
-                             (fiveam:run :cl-excel/write-enhancements))))
+                             (fiveam:run :cl-excel/write-enhancements)
+                             (fiveam:run :cl-excel/tibble)
+                             (fiveam:run :cl-excel/compat))))
         (fiveam:explain! results)
         (if (fiveam:results-status results)
             (uiop:quit 0)

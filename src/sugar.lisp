@@ -166,7 +166,7 @@
             (make-range-ref cr cr)))))
     (t (error "Unknown range designator: ~A" desig))))
 
-(defun read-file (path &optional (sheet-id 1) (range :all))
+(defun read-file (path &optional (sheet-id 1) (range :all) &key keep-empty-rows (timezone local-time:+utc-zone+))
   "Quickly read data from a file.
    Returns list of lists (rows).
    PATH: Path to .xlsx file.
@@ -178,17 +178,17 @@
      - 1 - row 1 (trimmed)
      - '1:3' - rows 1 to 3 (trimmed)
      - 'A1' - single cell"
-  (with-xlsx (wb path)
+  (with-xlsx (wb path :timezone timezone))
     (let ((sh (sheet wb sheet-id)))
       (let ((resolved (resolve-smart-range sh range)))
         (cond
           ((eq resolved :all)
-           (map-rows #'identity sh))
+           (map-rows #'identity sh)) ;; map-rows uses do-rows which we fixed to handle sparse cols
           ((null resolved) 
            ;; Empty sheet or range
            nil)
           ((typep resolved 'range-ref)
-           ;; Iterate range
+           ;; Iterate range - Explicit range access needs to handle empty cells too
            (let ((r1 (range-start-row resolved))
                  (c1 (range-start-col resolved))
                  (r2 (range-end-row resolved))
@@ -196,11 +196,18 @@
                  (res '()))
              (loop for r from r1 to r2 do
                (let ((row '()))
-                 (loop for c from c1 to c2 do
-                   (push (get-data sh (cons r c)) row))
-                 (push (nreverse row) res)))
+                 (if (or (and keep-empty-rows) ;; If keeping empty rows, always push
+                         (gethash r (sheet-cells sh))) ;; Or if row exists
+                     (progn
+                       (loop for c from c1 to c2 do
+                         (let ((cell (get-hash-cell sh r c)))
+                           (push (if cell (cell-value cell) +missing+) row)))
+                       (push (nreverse row) res))))
              (nreverse res)))
           (t (error "Unable to resolve range"))))))) 
+
+(defun get-hash-cell (sheet r c)
+  (gethash (cons r c) (sheet-cells sheet))) 
 
 ;;; 7. Demo Utilities (sugar for examples)
 

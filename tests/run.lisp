@@ -41,7 +41,8 @@
                       (run! :cl-excel/workbook)
                       (run! :cl-excel/tables)
                       (run! :cl-excel/write-enhancements)
-                      (run! :cl-excel/tibble))))
+                      (run! :cl-excel/tibble)
+                      (run! :cl-excel/compat))))
     (declare (ignore results))
     t))
 
