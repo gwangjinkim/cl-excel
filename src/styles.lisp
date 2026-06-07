@@ -4,13 +4,15 @@
 
 (defstruct styles
   (num-fmts (make-hash-table :test 'eql)) ;; Map numFmtId (int) -> formatCode (string)
-  (cell-xfs #()))                         ;; Vector of numFmtIds (ints), indexed by xfId
+  (cell-xfs #())                         ;; Vector of numFmtIds (ints), indexed by xfId
+  (fillid-xfs #()))
 
 (defun read-styles (zip)
   "Read xl/styles.xml from ZIP. Returns a STYLES struct."
   (let ((stream (get-entry-stream zip "xl/styles.xml"))
         (styles (make-styles :num-fmts (make-hash-table :test 'eql)
-                             :cell-xfs #())))
+                             :cell-xfs #()
+                             :fillid-xfs #())))
     (if stream
         (let* ((dom (parse-xml stream))
                (root (stp:document-element dom))
@@ -26,13 +28,17 @@
           
           ;; 2. Parse <cellXfs> (ordered list)
           (let ((xfs-node (find-child root "cellXfs"))
-                (xf-list '()))
+                (xf-list-fmt '())
+                (xf-list-fill '()))
             (when xfs-node
               (stp:do-children (xf xfs-node)
                 (when (and (typep xf 'stp:element) (string= (stp:local-name xf) "xf"))
-                  (let ((num-fmt-id (parse-integer (get-attribute xf "numFmtId"))))
-                    (push num-fmt-id xf-list)))))
-            (setf (styles-cell-xfs styles) (coerce (nreverse xf-list) 'vector)))
+                  (let ((num-fmt-id (parse-integer (get-attribute xf "numFmtId")))
+                        (fill-id (parse-integer (get-attribute xf "fillId"))))
+                    (push num-fmt-id xf-list-fmt)
+                    (push fill-id xf-list-fill)))))
+            (setf (styles-cell-xfs styles) (coerce (nreverse xf-list-fmt) 'vector))
+            (setf (styles-fillid-xfs styles) (coerce (nreverse xf-list-fill) 'vector)))
           
           styles)
         ;; If no styles, return empty struct
